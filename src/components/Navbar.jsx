@@ -61,10 +61,10 @@ export default function Navbar({ activeRoute = 'dashboard' }) {
             <span>🚀 Aji 50 Days Challenge</span>
           </div>
 
-          <div className="profile-card" title="Signed in as Aji">
-            <div className="avatar-circle">AJ</div>
+          <div className="profile-card" title="Signed in as Rustam Aji">
+            <div className="avatar-circle">RA</div>
             <div className="profile-info">
-              <span className="profile-name">Aji Pratama</span>
+              <span className="profile-name">Rustam Aji</span>
               <span className="profile-role">Personal Workspace</span>
             </div>
           </div>

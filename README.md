@@ -2,7 +2,7 @@
 
 A modern personal finance dashboard for tracking income, expenses, transactions, and financial insights.
 
-Built by **Aji** as part of the **Aji 50 Days GitHub Challenge**.
+Built by **Rustam Aji** as part of the **Aji 50 Days GitHub Challenge**.
 
 ---
 
