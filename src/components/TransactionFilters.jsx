@@ -28,14 +28,14 @@ export default function TransactionFilters({
         : ALL_CATEGORIES
 
   return (
-    <div className="transaction-filters" role="search" aria-label="Transaction filters and search">
-      {/* Top Row: Search Input */}
-      <div className="filters-main-row">
-        <div className="filter-search-box">
+    <div className="filters-container" role="search" aria-label="Transaction filters and search">
+      {/* Row 1: Search + Clear Filters */}
+      <div className="filters-top-row">
+        <div className="search-wrapper">
           <svg
             className="search-icon"
-            width="16"
-            height="16"
+            width="15"
+            height="15"
             viewBox="0 0 24 24"
             fill="none"
             stroke="currentColor"
@@ -47,36 +47,94 @@ export default function TransactionFilters({
             <circle cx="11" cy="11" r="8" />
             <line x1="21" y1="21" x2="16.65" y2="16.65" />
           </svg>
-
           <input
             type="text"
-            className="filter-search-input"
-            placeholder="Search by transaction name... (e.g. Makan, Salary)"
+            className="search-input"
+            placeholder="Search by transaction name…"
             value={searchQuery}
             onChange={(e) => onSearchChange(e.target.value)}
             aria-label="Search transactions by name"
           />
-
           {searchQuery && (
             <button
               type="button"
-              className="search-clear-btn"
+              className="search-clear-x"
               onClick={() => onSearchChange('')}
               title="Clear search"
-              aria-label="Clear search input"
+              aria-label="Clear search"
             >
               ✕
             </button>
           )}
         </div>
 
-        {/* Clear Filters Button (shown when any filter is active) */}
+        {/* Type Filter Pills */}
+        <div className="type-filter-group" role="group" aria-label="Filter by transaction type">
+          <button
+            type="button"
+            className={`type-filter-btn ${typeFilter === 'all' ? 'active' : ''}`}
+            onClick={() => { onTypeChange('all') }}
+          >
+            All Types
+          </button>
+          <button
+            type="button"
+            className={`type-filter-btn ${typeFilter === 'income' ? 'active-income' : ''}`}
+            onClick={() => {
+              onTypeChange('income')
+              if (!INCOME_CATEGORIES.includes(categoryFilter) && categoryFilter !== 'all') {
+                onCategoryChange('all')
+              }
+            }}
+          >
+            Income
+          </button>
+          <button
+            type="button"
+            className={`type-filter-btn ${typeFilter === 'expense' ? 'active-expense' : ''}`}
+            onClick={() => {
+              onTypeChange('expense')
+              if (!EXPENSE_CATEGORIES.includes(categoryFilter) && categoryFilter !== 'all') {
+                onCategoryChange('all')
+              }
+            }}
+          >
+            Expense
+          </button>
+        </div>
+      </div>
+
+      {/* Row 2: Category + Date + Clear */}
+      <div className="filters-bottom-row">
+        <select
+          className="filter-select"
+          value={categoryFilter}
+          onChange={(e) => onCategoryChange(e.target.value)}
+          aria-label="Filter by category"
+        >
+          <option value="all">All Categories</option>
+          {categoryOptions.map((cat) => (
+            <option key={cat} value={cat}>{cat}</option>
+          ))}
+        </select>
+
+        <select
+          className="filter-select"
+          value={dateFilter}
+          onChange={(e) => onDateChange(e.target.value)}
+          aria-label="Filter by date range"
+        >
+          <option value="all">All Time</option>
+          <option value="this_month">This Month</option>
+          <option value="this_week">This Week</option>
+        </select>
+
         {hasActiveFilters && (
           <button
             type="button"
             className="clear-filters-btn"
             onClick={onReset}
-            title="Reset search and all active filters"
+            title="Reset all filters"
           >
             <span>✕</span>
             <span>Clear Filters</span>
@@ -84,81 +142,9 @@ export default function TransactionFilters({
         )}
       </div>
 
-      {/* Controls Row: Type Pills, Category Dropdown, Date Dropdown */}
-      <div className="filters-controls-row">
-        <div className="filters-left-group">
-          {/* Type Segmented Filter */}
-          <div className="type-filter-group" role="group" aria-label="Filter by transaction type">
-            <button
-              type="button"
-              className={`type-filter-btn ${typeFilter === 'all' ? 'active' : ''}`}
-              onClick={() => {
-                onTypeChange('all')
-                if (!ALL_CATEGORIES.includes(categoryFilter) && categoryFilter !== 'all') {
-                  onCategoryChange('all')
-                }
-              }}
-            >
-              All Types
-            </button>
-            <button
-              type="button"
-              className={`type-filter-btn ${typeFilter === 'income' ? 'active' : ''}`}
-              onClick={() => {
-                onTypeChange('income')
-                if (!INCOME_CATEGORIES.includes(categoryFilter) && categoryFilter !== 'all') {
-                  onCategoryChange('all')
-                }
-              }}
-            >
-              Income
-            </button>
-            <button
-              type="button"
-              className={`type-filter-btn ${typeFilter === 'expense' ? 'active' : ''}`}
-              onClick={() => {
-                onTypeChange('expense')
-                if (!EXPENSE_CATEGORIES.includes(categoryFilter) && categoryFilter !== 'all') {
-                  onCategoryChange('all')
-                }
-              }}
-            >
-              Expense
-            </button>
-          </div>
-
-          {/* Category Dropdown */}
-          <select
-            className="filter-select"
-            value={categoryFilter}
-            onChange={(e) => onCategoryChange(e.target.value)}
-            aria-label="Filter by category"
-          >
-            <option value="all">All Categories</option>
-            {categoryOptions.map((cat) => (
-              <option key={cat} value={cat}>
-                {cat}
-              </option>
-            ))}
-          </select>
-
-          {/* Date Filter Dropdown */}
-          <select
-            className="filter-select"
-            value={dateFilter}
-            onChange={(e) => onDateChange(e.target.value)}
-            aria-label="Filter by date range"
-          >
-            <option value="all">All Time</option>
-            <option value="this_month">This Month</option>
-            <option value="this_week">This Week (Last 7 Days)</option>
-          </select>
-        </div>
-      </div>
-
       {/* Status Bar */}
       <div className="filters-status-bar">
-        <span>
+        <span className="filter-count-text">
           Showing <strong>{filteredCount}</strong> of <strong>{totalCount}</strong> transactions
         </span>
 
@@ -167,33 +153,25 @@ export default function TransactionFilters({
             {searchQuery && (
               <span className="filter-chip">
                 "{searchQuery}"
-                <span className="chip-remove" onClick={() => onSearchChange('')}>
-                  ×
-                </span>
+                <span className="filter-chip-remove" onClick={() => onSearchChange('')}>×</span>
               </span>
             )}
             {typeFilter !== 'all' && (
               <span className="filter-chip">
                 {typeFilter === 'income' ? 'Income' : 'Expense'}
-                <span className="chip-remove" onClick={() => onTypeChange('all')}>
-                  ×
-                </span>
+                <span className="filter-chip-remove" onClick={() => onTypeChange('all')}>×</span>
               </span>
             )}
             {categoryFilter !== 'all' && (
               <span className="filter-chip">
                 {categoryFilter}
-                <span className="chip-remove" onClick={() => onCategoryChange('all')}>
-                  ×
-                </span>
+                <span className="filter-chip-remove" onClick={() => onCategoryChange('all')}>×</span>
               </span>
             )}
             {dateFilter !== 'all' && (
               <span className="filter-chip">
                 {dateFilter === 'this_month' ? 'This Month' : 'This Week'}
-                <span className="chip-remove" onClick={() => onDateChange('all')}>
-                  ×
-                </span>
+                <span className="filter-chip-remove" onClick={() => onDateChange('all')}>×</span>
               </span>
             )}
           </div>

@@ -18,11 +18,10 @@ html {
 body {
   min-height: 100vh;
   font-family: var(--font-sans);
-  background-color: var(--bg-app);
+  background-color: var(--bg-primary);
   color: var(--text-body);
   line-height: 1.5;
   overflow-x: hidden;
-  transition: background-color var(--transition-normal), color var(--transition-normal);
 }
 
 /* App Structure */
@@ -30,13 +29,17 @@ body {
   min-height: 100vh;
   display: flex;
   flex-direction: column;
+  position: relative;
+  z-index: 2;
 }
 
 .app-container {
   min-height: 100vh;
   display: flex;
   flex-direction: column;
-  background-color: var(--bg-app);
+  background: transparent;
+  position: relative;
+  z-index: 2;
 }
 
 .main-content-wrapper {
@@ -45,6 +48,8 @@ body {
   max-width: var(--container-max-width);
   margin: 0 auto;
   padding: 2rem 1.5rem 3rem;
+  position: relative;
+  z-index: 2;
 }
 
 /* Typography Helpers */
@@ -67,6 +72,16 @@ button {
   outline: none;
 }
 
+/* Glass Panel Base */
+.glass-panel {
+  background: var(--surface-glass);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-glass);
+}
+
 /* Utility Badges */
 .badge {
   display: inline-flex;
@@ -86,15 +101,15 @@ button {
 }
 
 .badge-income {
-  background-color: var(--color-income-bg);
-  color: var(--color-income);
-  border: 1px solid var(--color-income-border);
+  background-color: var(--income-bg);
+  color: var(--income);
+  border: 1px solid var(--income-border);
 }
 
 .badge-expense {
-  background-color: var(--color-expense-bg);
-  color: var(--color-expense);
-  border: 1px solid var(--color-expense-border);
+  background-color: var(--expense-bg);
+  color: var(--expense);
+  border: 1px solid var(--expense-border);
 }
 
 .badge-subtle {
@@ -104,15 +119,18 @@ button {
 
 /* Glass & Card Surfaces */
 .card-base {
-  background: var(--bg-surface);
-  border: 1px solid var(--border-subtle);
+  background: var(--surface-glass);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid var(--border);
   border-radius: var(--radius-xl);
-  box-shadow: var(--shadow-sm);
+  box-shadow: var(--shadow-glass);
   transition: transform var(--transition-fast), box-shadow var(--transition-fast), border-color var(--transition-fast);
 }
 
 .card-base:hover {
   border-color: var(--border-focus);
+  box-shadow: var(--shadow-purple);
 }
 
 /* Interactive elements */
@@ -121,19 +139,19 @@ button {
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
-  background-color: var(--primary);
+  background: linear-gradient(135deg, var(--purple) 0%, var(--violet) 100%);
   color: #ffffff;
   font-weight: 600;
   font-size: 0.875rem;
   padding: 0.625rem 1.125rem;
   border-radius: var(--radius-md);
-  box-shadow: var(--shadow-sm);
+  box-shadow: 0 0 16px rgba(139, 92, 246, 0.35);
   transition: all var(--transition-fast);
+  letter-spacing: 0.02em;
 }
 
 .btn-primary:hover {
-  background-color: var(--primary-hover);
-  box-shadow: var(--shadow-purple);
+  box-shadow: 0 0 28px rgba(139, 92, 246, 0.55);
   transform: translateY(-1px);
 }
 
@@ -142,9 +160,11 @@ button {
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
-  background-color: var(--bg-surface);
+  background: var(--surface-glass);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
   color: var(--text-main);
-  border: 1px solid var(--border-subtle);
+  border: 1px solid var(--border);
   font-weight: 600;
   font-size: 0.875rem;
   padding: 0.625rem 1.125rem;
@@ -153,13 +173,22 @@ button {
 }
 
 .btn-secondary:hover {
-  background-color: var(--bg-muted);
-  border-color: var(--border-focus);
+  background: var(--surface-glass-hover);
+  border-color: var(--purple);
+  box-shadow: 0 0 12px rgba(139, 92, 246, 0.22);
 }
 
 /* Responsive adjustments */
 @media (max-width: 768px) {
   .main-content-wrapper {
     padding: 1.25rem 1rem 2.5rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
   }
 }

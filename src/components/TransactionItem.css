@@ -1,90 +1,107 @@
+/* =============================================
+   TRANSACTION ITEM — Dark Glass Panel
+   ============================================= */
 .transaction-item {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0.85rem 1rem;
-  background: var(--bg-surface);
-  border: 1px solid var(--border-light);
-  border-radius: var(--radius-lg);
-  transition: all var(--transition-fast);
   gap: 1rem;
+  padding: 0.875rem 1.25rem;
+  border-bottom: 1px solid rgba(120, 140, 180, 0.1);
+  transition: background var(--transition-fast);
+  list-style: none;
+}
+
+.transaction-item:last-child {
+  border-bottom: none;
 }
 
 .transaction-item:hover {
-  background-color: var(--bg-muted);
-  border-color: var(--border-subtle);
-  transform: translateX(2px);
+  background: rgba(139, 92, 246, 0.05);
 }
 
+/* ---- Left Side ---- */
 .transaction-left {
   display: flex;
   align-items: center;
-  gap: 0.85rem;
+  gap: 0.875rem;
   min-width: 0;
   flex: 1;
 }
 
 .category-icon-box {
-  width: 42px;
-  height: 42px;
-  border-radius: var(--radius-md);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1.15rem;
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-md);
+  font-size: 1.1rem;
   flex-shrink: 0;
-  box-shadow: var(--shadow-xs);
-  background-color: #f8fafc;
-  border: 1px solid var(--border-subtle);
-}
-
-.category-icon-box.expense {
-  background-color: var(--color-expense-bg);
-  border-color: var(--color-expense-border);
+  border: 1px solid transparent;
+  transition: all var(--transition-fast);
 }
 
 .category-icon-box.income {
-  background-color: var(--color-income-bg);
-  border-color: var(--color-income-border);
+  background: var(--income-bg);
+  border-color: var(--income-border);
+  box-shadow: 0 0 12px rgba(34, 211, 238, 0.12);
+}
+
+.category-icon-box.expense {
+  background: var(--expense-bg);
+  border-color: var(--expense-border);
+  box-shadow: 0 0 12px rgba(244, 63, 94, 0.12);
 }
 
 .transaction-details {
   display: flex;
   flex-direction: column;
-  gap: 0.2rem;
+  gap: 0.25rem;
   min-width: 0;
 }
 
 .transaction-title {
-  font-size: 0.925rem;
+  font-size: 0.9rem;
   font-weight: 600;
   color: var(--text-main);
-  white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .transaction-meta {
   display: flex;
   align-items: center;
-  gap: 0.45rem;
-  font-size: 0.775rem;
-  color: var(--text-muted);
-}
-
-.category-tag {
-  font-weight: 600;
-  color: var(--text-body);
-}
-
-.meta-separator {
+  gap: 0.4rem;
+  font-size: 0.75rem;
   color: var(--text-subtle);
 }
 
+.category-tag {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.15rem 0.45rem;
+  background: rgba(139, 92, 246, 0.1);
+  border: 1px solid rgba(139, 92, 246, 0.2);
+  border-radius: var(--radius-full);
+  font-size: 0.68rem;
+  font-weight: 600;
+  color: var(--purple);
+  letter-spacing: 0.03em;
+  white-space: nowrap;
+}
+
+.meta-separator {
+  color: var(--text-dim);
+  font-size: 0.8rem;
+}
+
+/* ---- Right Side ---- */
 .transaction-right {
   display: flex;
   align-items: center;
-  gap: 0.85rem;
+  gap: 0.875rem;
   flex-shrink: 0;
 }
 
@@ -92,104 +109,100 @@
   display: flex;
   flex-direction: column;
   align-items: flex-end;
-  gap: 0.15rem;
+  gap: 0.2rem;
 }
 
 .transaction-amount {
   font-size: 0.95rem;
   font-weight: 700;
   letter-spacing: -0.01em;
-}
-
-.transaction-amount.expense {
-  color: var(--text-main);
+  white-space: nowrap;
 }
 
 .transaction-amount.income {
-  color: var(--color-income);
+  color: var(--income);
+  text-shadow: 0 0 8px rgba(34, 211, 238, 0.3);
+}
+
+.transaction-amount.expense {
+  color: var(--expense);
+  text-shadow: 0 0 8px rgba(244, 63, 94, 0.3);
 }
 
 .transaction-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.15rem 0.45rem;
+  border-radius: var(--radius-full);
   font-size: 0.65rem;
-  font-weight: 600;
-  padding: 0.1rem 0.4rem;
-  border-radius: var(--radius-sm);
+  font-weight: 700;
+  letter-spacing: 0.05em;
   text-transform: uppercase;
-  letter-spacing: 0.02em;
-}
-
-.transaction-badge.expense {
-  background-color: var(--color-expense-bg);
-  color: var(--color-expense);
 }
 
 .transaction-badge.income {
-  background-color: var(--color-income-bg);
-  color: var(--color-income);
+  background: var(--income-bg);
+  color: var(--income);
+  border: 1px solid var(--income-border);
 }
 
-/* Action Buttons (Edit / Delete) */
+.transaction-badge.expense {
+  background: var(--expense-bg);
+  color: var(--expense);
+  border: 1px solid var(--expense-border);
+}
+
+/* ---- Action Buttons ---- */
 .transaction-actions {
   display: flex;
   align-items: center;
-  gap: 0.25rem;
-  padding-left: 0.5rem;
-  border-left: 1px solid var(--border-light);
+  gap: 0.35rem;
+  opacity: 0;
+  transition: opacity var(--transition-fast);
+}
+
+.transaction-item:hover .transaction-actions {
+  opacity: 1;
 }
 
 .action-icon-btn {
-  width: 32px;
-  height: 32px;
-  border-radius: var(--radius-sm);
   display: flex;
   align-items: center;
   justify-content: center;
+  width: 30px;
+  height: 30px;
+  border-radius: var(--radius-md);
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
   color: var(--text-muted);
-  background: transparent;
-  border: 1px solid transparent;
   transition: all var(--transition-fast);
   cursor: pointer;
 }
 
-.action-icon-btn:hover {
-  background-color: var(--bg-surface);
-  border-color: var(--border-subtle);
-  color: var(--text-main);
-  box-shadow: var(--shadow-xs);
-}
-
 .action-icon-btn.edit-btn:hover {
-  color: var(--primary);
-  border-color: var(--primary-border);
-  background-color: var(--primary-light);
+  color: var(--cyan);
+  background: rgba(34, 211, 238, 0.1);
+  border-color: rgba(34, 211, 238, 0.3);
+  box-shadow: 0 0 10px rgba(34, 211, 238, 0.2);
 }
 
 .action-icon-btn.delete-btn:hover {
-  color: var(--color-expense);
-  border-color: var(--color-expense-border);
-  background-color: var(--color-expense-bg);
+  color: var(--expense);
+  background: rgba(244, 63, 94, 0.1);
+  border-color: rgba(244, 63, 94, 0.3);
+  box-shadow: 0 0 10px rgba(244, 63, 94, 0.2);
 }
 
-/* Mobile responsive */
-@media (max-width: 580px) {
+@media (max-width: 600px) {
   .transaction-item {
-    flex-direction: column;
-    align-items: stretch;
-    gap: 0.75rem;
-  }
-
-  .transaction-right {
-    justify-content: space-between;
-    border-top: 1px dashed var(--border-light);
-    padding-top: 0.6rem;
-  }
-
-  .transaction-amount-wrapper {
-    align-items: flex-start;
+    padding: 0.75rem 1rem;
   }
 
   .transaction-actions {
-    border-left: none;
-    padding-left: 0;
+    opacity: 1;
+  }
+
+  .transaction-badge {
+    display: none;
   }
 }

@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
 import StatCard from '../components/StatCard'
 import AnalyticsSection from '../components/AnalyticsSection'
+import AnimatedEye from '../components/AnimatedEye'
 import TransactionFilters from '../components/TransactionFilters'
 import TransactionItem from '../components/TransactionItem'
 import TransactionForm from '../components/TransactionForm'
@@ -91,7 +92,7 @@ export default function Dashboard() {
           ================================================== */}
       <header className="dashboard-header" id="dashboard">
         <div className="dashboard-title-group">
-          <h1 className="dashboard-title">Good morning, Aji 👋</h1>
+          <h1 className="dashboard-title">Good morning, Rustam Aji 👋</h1>
           <p className="dashboard-subtitle">Here's an overview of your finances.</p>
         </div>
 
@@ -174,9 +175,14 @@ export default function Dashboard() {
       <div id="analytics-section">
         <div className="section-header-block">
           <div className="section-title-wrap">
-            <h2 className="section-title">Financial Analytics</h2>
-            <p className="section-subtitle">Real-time metrics, trend models, and category distributions</p>
+            <h2 className="section-title">Financial Vision</h2>
+            <p className="section-subtitle">Real-time intelligence, trend models, and category distributions</p>
           </div>
+        </div>
+
+        {/* Animated Eye Hero */}
+        <div className="analytics-eye-hero">
+          <AnimatedEye stats={stats} />
         </div>
 
         <AnalyticsSection
