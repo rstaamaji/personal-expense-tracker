@@ -10,6 +10,11 @@
   transition: all var(--transition-fast);
 }
 
+[data-theme='dark'] .navbar {
+  background: rgba(20, 28, 46, 0.92);
+  border-bottom-color: var(--border-subtle);
+}
+
 .navbar-inner {
   max-width: var(--container-max-width);
   margin: 0 auto;
@@ -122,30 +127,36 @@
   border: 1px solid var(--border-subtle);
 }
 
-/* User Profile Section */
+/* User Profile & Theme Toggle Controls */
 .navbar-user {
   display: flex;
   align-items: center;
-  gap: 1rem;
+  gap: 0.75rem;
 }
 
-.navbar-challenge-tag {
-  display: none;
-  font-size: 0.75rem;
-  font-weight: 600;
-  color: #6d28d9;
-  background-color: #f3e8ff;
-  border: 1px solid #e9d5ff;
-  padding: 0.3rem 0.75rem;
-  border-radius: var(--radius-full);
+/* Theme Toggle Button */
+.theme-toggle-btn {
+  width: 38px;
+  height: 38px;
+  border-radius: var(--radius-md);
+  background-color: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-main);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  box-shadow: var(--shadow-xs);
+  flex-shrink: 0;
 }
 
-@media (min-width: 1024px) {
-  .navbar-challenge-tag {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.35rem;
-  }
+.theme-toggle-btn:hover {
+  background-color: var(--bg-muted);
+  border-color: var(--primary-border);
+  color: var(--primary);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-sm);
 }
 
 .profile-card {

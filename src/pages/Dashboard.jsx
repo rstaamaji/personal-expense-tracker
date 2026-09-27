@@ -1,16 +1,11 @@
 import React, { useState } from 'react'
 import StatCard from '../components/StatCard'
+import TransactionItem from '../components/TransactionItem'
+import TransactionForm from '../components/TransactionForm'
+import DeleteConfirmModal from '../components/DeleteConfirmModal'
+import { useTransactions } from '../hooks/useTransactions'
+import { formatRupiah } from '../utils/formatters'
 import './Dashboard.css'
-
-/**
- * Static Mock Data for Day 1
- */
-const MOCK_SUMMARY = {
-  totalBalance: 'Rp 3.250.000',
-  totalIncome: 'Rp 5.000.000',
-  totalExpense: 'Rp 1.750.000',
-  transactionCount: '24',
-}
 
 const MOCK_MONTHLY_CHART = [
   { month: 'Apr', expense: 1200000, height: 40 },
@@ -21,57 +16,72 @@ const MOCK_MONTHLY_CHART = [
   { month: 'Sep', expense: 1750000, height: 60, current: true },
 ]
 
-const MOCK_TRANSACTIONS = [
-  {
-    id: 'tx-1',
-    title: 'Makan Siang',
-    category: 'Food',
-    categoryType: 'food',
-    icon: '🍔',
-    date: 'Today, 12:45 PM',
-    amount: '-Rp 25.000',
-    type: 'expense',
-  },
-  {
-    id: 'tx-2',
-    title: 'Transportasi',
-    category: 'Transportation',
-    categoryType: 'transport',
-    icon: '🚗',
-    date: 'Today, 08:30 AM',
-    amount: '-Rp 15.000',
-    type: 'expense',
-  },
-  {
-    id: 'tx-3',
-    title: 'Freelance Project',
-    category: 'Income',
-    categoryType: 'income',
-    icon: '💼',
-    date: 'Yesterday, 03:20 PM',
-    amount: '+Rp 500.000',
-    type: 'income',
-  },
-  {
-    id: 'tx-4',
-    title: 'Buku Kuliah',
-    category: 'Education',
-    categoryType: 'education',
-    icon: '📚',
-    date: 'Sep 24, 2026',
-    amount: '-Rp 75.000',
-    type: 'expense',
-  },
-]
-
 export default function Dashboard() {
+  const {
+    transactions,
+    stats,
+    addTransaction,
+    updateTransaction,
+    deleteTransaction,
+  } = useTransactions()
+
   const [activeTimeframe, setActiveTimeframe] = useState('6M')
   const [hoveredMonth, setHoveredMonth] = useState('Sep')
+
+  // Modals state
+  const [isFormOpen, setIsFormOpen] = useState(false)
+  const [editingTransaction, setEditingTransaction] = useState(null)
+  const [deletingTransaction, setDeletingTransaction] = useState(null)
+
+  // Open modal in Add mode
+  const handleOpenAdd = () => {
+    setEditingTransaction(null)
+    setIsFormOpen(true)
+  }
+
+  // Open modal in Edit mode
+  const handleOpenEdit = (tx) => {
+    setEditingTransaction(tx)
+    setIsFormOpen(true)
+  }
+
+  // Handle form submission (Add or Edit)
+  const handleFormSubmit = (data) => {
+    if (editingTransaction) {
+      updateTransaction(editingTransaction.id, data)
+    } else {
+      addTransaction(data)
+    }
+  }
+
+  // Open delete confirmation modal
+  const handleOpenDelete = (tx) => {
+    setDeletingTransaction(tx)
+  }
+
+  // Confirm delete
+  const handleConfirmDelete = () => {
+    if (deletingTransaction) {
+      deleteTransaction(deletingTransaction.id)
+      setDeletingTransaction(null)
+    }
+  }
+
+  // Cancel delete
+  const handleCancelDelete = () => {
+    setDeletingTransaction(null)
+  }
+
+  // Calculate expense ratio percentage for supporting text
+  const expenseRatio =
+    stats.totalIncome > 0
+      ? Math.round((stats.totalExpense / stats.totalIncome) * 100)
+      : 0
 
   return (
     <div className="dashboard">
       {/* ==================================================
-          STEP 5: Dashboard Header
+          Header Section
           ================================================== */}
       <header className="dashboard-header">
         <div className="dashboard-title-group">
@@ -97,37 +107,37 @@ export default function Dashboard() {
               <line x1="8" y1="2" x2="8" y2="6" />
               <line x1="3" y1="10" x2="21" y2="10" />
             </svg>
-            <span>September 26, 2026</span>
+            <span>September 27, 2026</span>
           </div>
 
           <button
             type="button"
             className="header-action-btn"
-            title="Transaction form will be added on Day 3"
+            onClick={handleOpenAdd}
+            aria-label="Add a new transaction"
           >
             <span>+ Add Transaction</span>
-            <span className="header-action-tag">Day 3</span>
           </button>
         </div>
       </header>
 
       {/* ==================================================
-          STEP 6: Summary Cards (4 Cards)
+          Summary Cards (Dynamic Statistics)
           ================================================== */}
       <section className="summary-grid" aria-label="Financial Summary Cards">
         <StatCard
           label="Total Balance"
-          value={MOCK_SUMMARY.totalBalance}
-          subtext="+12.4% vs last month"
+          value={formatRupiah(stats.totalBalance)}
+          subtext={stats.totalBalance >= 0 ? 'Net positive savings' : 'Expenses exceed income'}
           type="balance"
-          badgeText="+12.4%"
-          badgeTrend="up"
+          badgeText={stats.totalBalance >= 0 ? 'Healthy' : 'Deficit'}
+          badgeTrend={stats.totalBalance >= 0 ? 'up' : 'down'}
         />
 
         <StatCard
           label="Total Income"
-          value={MOCK_SUMMARY.totalIncome}
-          subtext="Main salary & freelance"
+          value={formatRupiah(stats.totalIncome)}
+          subtext="Total earned funds"
           type="income"
           badgeText="Active"
           badgeTrend="up"
@@ -135,25 +145,25 @@ export default function Dashboard() {
 
         <StatCard
           label="Total Expense"
-          value={MOCK_SUMMARY.totalExpense}
-          subtext="35% of total income"
+          value={formatRupiah(stats.totalExpense)}
+          subtext={`${expenseRatio}% of income spent`}
           type="expense"
-          badgeText="Normal"
+          badgeText="Spent"
           badgeTrend="down"
         />
 
         <StatCard
           label="Transactions"
-          value={MOCK_SUMMARY.transactionCount}
-          subtext="Logged this month"
+          value={String(stats.transactionCount)}
+          subtext="Stored in LocalStorage"
           type="transactions"
-          badgeText="+4 today"
+          badgeText={`${stats.transactionCount} total`}
           badgeTrend="neutral"
         />
       </section>
 
       {/* ==================================================
-          STEP 7: Main Dashboard Content (Two Columns)
+          Main Dashboard Content (Two Columns)
           ================================================== */}
       <div className="dashboard-main-grid">
         {/* SECTION A: Spending Overview */}
@@ -182,7 +192,7 @@ export default function Dashboard() {
             </div>
           </div>
 
-          {/* Polished Visual SVG Chart Placeholder without external libraries */}
+          {/* Visual SVG Chart Placeholder without external libraries */}
           <div className="chart-visual-wrapper">
             <div className="chart-legend">
               <div className="legend-item">
@@ -305,62 +315,70 @@ export default function Dashboard() {
             <div className="chart-footer-note">
               <span>Showing 6-month historical spending pattern</span>
               <span className="chart-highlight-badge">
-                Selected: {hoveredMonth} (Rp 1.750.000)
+                Selected: {hoveredMonth} ({formatRupiah(stats.totalExpense)})
               </span>
             </div>
           </div>
         </section>
 
-        {/* SECTION B: Recent Transactions */}
+        {/* SECTION B: Recent Transactions (Dynamic CRUD List) */}
         <section className="dashboard-card" aria-label="Recent Transactions">
           <div className="card-header-row">
             <div className="card-title-group">
               <h2 className="card-title">Recent Transactions</h2>
-              <span className="card-subtitle">Latest account movements</span>
+              <span className="card-subtitle">
+                {transactions.length > 0
+                  ? `${transactions.length} recorded movements`
+                  : 'Latest account movements'}
+              </span>
             </div>
 
-            <a href="#transactions" className="view-all-link">
-              View all
-              <span aria-hidden="true">→</span>
-            </a>
+            {transactions.length > 0 && (
+              <button
+                type="button"
+                className="view-all-link"
+                onClick={handleOpenAdd}
+              >
+                + Add New
+              </button>
+            )}
           </div>
 
-          <ul className="transactions-list">
-            {MOCK_TRANSACTIONS.map((tx) => (
-              <li key={tx.id} className="transaction-item">
-                <div className="transaction-left">
-                  <div
-                    className={`category-icon-box ${tx.categoryType}`}
-                    aria-hidden="true"
-                  >
-                    {tx.icon}
-                  </div>
-                  <div className="transaction-details">
-                    <span className="transaction-title">{tx.title}</span>
-                    <div className="transaction-meta">
-                      <span className="category-tag">{tx.category}</span>
-                      <span>•</span>
-                      <span>{tx.date}</span>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="transaction-right">
-                  <span className={`transaction-amount ${tx.type}`}>
-                    {tx.amount}
-                  </span>
-                  <span className={`transaction-badge ${tx.type}`}>
-                    {tx.type === 'income' ? 'Income' : 'Expense'}
-                  </span>
-                </div>
-              </li>
-            ))}
-          </ul>
+          {/* Dynamic Transaction List or Clean Empty State */}
+          {transactions.length === 0 ? (
+            <div className="transactions-empty-state">
+              <div className="empty-state-icon" aria-hidden="true">
+                🧾
+              </div>
+              <h3 className="empty-state-title">No transactions yet</h3>
+              <p className="empty-state-desc">
+                Add your first transaction to start tracking your finances.
+              </p>
+              <button
+                type="button"
+                className="btn-primary empty-state-btn"
+                onClick={handleOpenAdd}
+              >
+                + Add Transaction
+              </button>
+            </div>
+          ) : (
+            <ul className="transactions-list">
+              {transactions.map((tx) => (
+                <TransactionItem
+                  key={tx.id}
+                  transaction={tx}
+                  onEdit={handleOpenEdit}
+                  onDelete={handleOpenDelete}
+                />
+              ))}
+            </ul>
+          )}
         </section>
       </div>
 
       {/* ==================================================
-          STEP 8: Empty / Future State Hint
+          Empty / Future State Hint
           ================================================== */}
       <section className="future-insights-card" aria-label="Future Insights">
         <div className="insights-content">
@@ -371,13 +389,36 @@ export default function Dashboard() {
             <h3 className="insights-title">Smart Financial Insights</h3>
             <p className="insights-desc">
               Your financial insights will appear here. Automated spending trends,
-              budget health alerts, and savings opportunities will unlock on Day 6.
+              budget health alerts, and savings opportunities will unlock on Day 4.
             </p>
           </div>
         </div>
 
-        <span className="insights-badge">Roadmap: Day 6</span>
+        <span className="insights-badge">Roadmap: Day 4</span>
       </section>
+
+      {/* ==================================================
+          Transaction Modal (Add / Edit)
+          ================================================== */}
+      {isFormOpen && (
+        <TransactionForm
+          key={editingTransaction ? editingTransaction.id : 'add-transaction'}
+          isOpen={isFormOpen}
+          onClose={() => setIsFormOpen(false)}
+          onSubmit={handleFormSubmit}
+          initialData={editingTransaction}
+        />
+      )}
+
+      {/* ==================================================
+          Delete Confirmation Modal
+          ================================================== */}
+      <DeleteConfirmModal
+        isOpen={Boolean(deletingTransaction)}
+        transactionTitle={deletingTransaction?.title || ''}
+        onCancel={handleCancelDelete}
+        onConfirm={handleConfirmDelete}
+      />
     </div>
   )
 }

@@ -8,22 +8,35 @@ Built by **Rustam Aji** as part of the **Aji 50 Days GitHub Challenge**.
 
 ## Project Status
 
-**Day 1 — Foundation**
+**Day 2 — Transaction CRUD + LocalStorage**
 
-The core visual and architectural foundation of the Personal Expense Tracker has been established. The application features a clean, responsive SaaS dashboard layout with static mock data, preparing the structural baseline for upcoming state management, forms, storage, and charts.
+The application now supports full client-side Transaction CRUD functionality backed by browser LocalStorage persistence, live statistics recalculation, Indonesian Rupiah formatting, and robust modal forms with input validation.
 
 ---
 
-## Features
+## Day 2 — Transaction CRUD + LocalStorage
 
-### Currently Implemented (Day 1)
-- **Dashboard UI**: Clean, professional SaaS finance dashboard layout designed desktop-first and fully mobile-friendly.
-- **Header & Profile**: Personal greeting (`Good morning, Aji 👋`), date indicator, and workspace avatar badge.
-- **Summary Cards**: Four reusable stat cards (`StatCard.jsx`) showcasing Total Balance, Total Income, Total Expense, and Transactions count with trend badges and distinct status accents.
-- **Recent Transactions Mockup**: Formatted transaction stream highlighting categorization, contextual icons, timestamps, and income/expense status.
-- **Spending Overview Placeholder**: Pure SVG historical monthly spending graph with interactive hover highlights, grid lines, and budget reference line (no heavy third-party chart dependencies).
-- **Future Insights Hint**: Empty state preview card indicating upcoming analytics and AI recommendations for Day 6.
-- **Responsive Layout**: Fluid CSS Grid and Flexbox system supporting desktop (4 columns), tablet (2x2 grid), and mobile (single column) without horizontal overflow.
+### Implemented:
+- **Create transaction**: Interactive modal form to create income and expense transactions with validation.
+- **Read transactions**: Dynamic list sorted chronologically (newest first) with category icons and timestamps.
+- **Update transaction**: Edit existing transactions via pre-filled modal form with auto-recalculation.
+- **Delete transaction**: Safe deletion with dedicated confirmation dialog (no browser `alert()`).
+- **LocalStorage persistence**: Storage key `expense_tracker_transactions` handling missing, empty, or corrupted data gracefully.
+- **Dynamic balance**: Automatically computed as `Total Income - Total Expense`.
+- **Dynamic income**: Sum of all recorded income transactions.
+- **Dynamic expense**: Sum of all recorded expense transactions.
+- **Dynamic transaction count**: Live count of recorded transactions.
+- **Indonesian Rupiah formatting**: Reusable currency formatter producing standard `Rp X.XXX.XXX` formats.
+- **Form validation**: Clear inline validation rules (name, positive amount, type, category, date).
+- **Responsive transaction interface**: Desktop, tablet, and mobile optimized list, cards, and modal dialogs.
+- **Empty state**: Clean placeholder guiding the user when no transactions exist.
+
+### Privacy & Storage Considerations:
+- Transactions are stored locally in the browser (`localStorage`) and are **not** sent to a server, external API, GitHub, or third-party database in this version.
+- LocalStorage is suitable for this frontend prototype, but it should **NOT** be considered secure storage for passwords, authentication secrets, or highly sensitive financial credentials.
+- The application makes no claim of bank-grade security.
+- The repository contains only demo and mock transactions.
+- Day 2 is strictly frontend-only.
 
 ---
 
@@ -32,6 +45,7 @@ The core visual and architectural foundation of the Personal Expense Tracker has
 - **Framework**: [React 19](https://react.dev/)
 - **Bundler & Tooling**: [Vite 8](https://vite.dev/)
 - **Linter**: [Oxlint](https://oxc.rs/)
+- **State & Storage**: React Hooks (`useState`, `useEffect`, `useMemo`, `useCallback`) + Browser `localStorage`
 - **Styling**: Modern CSS3 (CSS Custom Properties / Variables, Flexbox, CSS Grid)
 - **Fonts**: Plus Jakarta Sans & Inter via Google Fonts
 - **Package Manager**: npm
@@ -43,37 +57,47 @@ The core visual and architectural foundation of the Personal Expense Tracker has
 ```
 src/
 ├── components/
-│   ├── Navbar.jsx          # Reusable top navigation with brand & profile
-│   ├── Navbar.css          # Navigation styling & responsive breakpoints
-│   ├── StatCard.jsx        # Reusable financial summary card component
-│   └── StatCard.css        # Stat card styling & hover animations
+│   ├── DeleteConfirmModal.jsx # Deletion confirmation dialog
+│   ├── DeleteConfirmModal.css # Deletion dialog styling
+│   ├── Navbar.jsx             # Top navigation with brand & profile
+│   ├── Navbar.css             # Navigation styling & responsive breakpoints
+│   ├── StatCard.jsx           # Reusable financial summary card component
+│   ├── StatCard.css           # Stat card styling & hover animations
+│   ├── TransactionForm.jsx    # Add/Edit modal form with validation
+│   ├── TransactionForm.css    # Modal form styling & segmented controls
+│   ├── TransactionItem.jsx    # Transaction list item with action buttons
+│   └── TransactionItem.css    # Transaction row styling
+│
+├── hooks/
+│   └── useTransactions.js     # CRUD operations, LocalStorage sync & live calculations
 │
 ├── pages/
-│   ├── Dashboard.jsx       # Main dashboard page containing sections A & B
-│   └── Dashboard.css       # Layout grid, SVG chart, and transactions styling
+│   ├── Dashboard.jsx          # Main dashboard page
+│   └── Dashboard.css          # Layout grid, SVG chart, and transactions styling
 │
 ├── styles/
-│   ├── variables.css       # Centralized design tokens (colors, radii, shadows)
-│   └── globals.css         # Reset, typography, and base layout styles
+│   ├── variables.css          # Centralized design tokens (colors, radii, shadows)
+│   └── globals.css            # Reset, typography, and base layout styles
 │
-├── App.jsx                 # Application layout container
-└── main.jsx                # React root entry point
+├── utils/
+│   ├── constants.js           # Categories, icons, and default seed data
+│   └── formatters.js          # Indonesian Rupiah & date formatters
+│
+├── App.jsx                    # Application layout container
+└── main.jsx                   # React root entry point
 ```
 
 ---
 
-## Roadmap (50 Days Challenge - Days 1 to 10)
+## 7-Day Roadmap
 
-- [x] **Day 1** — Dashboard foundation *(Completed)*
-- [ ] **Day 2** — Dashboard improvements
-- [ ] **Day 3** — Transaction form
-- [ ] **Day 4** — LocalStorage
-- [ ] **Day 5** — Transaction history
-- [ ] **Day 6** — Analytics
-- [ ] **Day 7** — Charts
-- [ ] **Day 8** — UI/UX improvements
-- [ ] **Day 9** — Refactoring and testing
-- [ ] **Day 10** — Deployment and documentation
+- [x] **Day 1** — Dashboard Foundation
+- [x] **Day 2** — Transaction CRUD + LocalStorage *(Completed)*
+- [ ] **Day 3** — Categories + Search + Filter
+- [ ] **Day 4** — Charts + Financial Analytics
+- [ ] **Day 5** — Backend API + PostgreSQL
+- [ ] **Day 6** — Authentication + Security + Integration
+- [ ] **Day 7** — Testing + Polish + Deployment
 
 ---
 

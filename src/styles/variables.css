@@ -71,3 +71,58 @@
   /* Container width */
   --container-max-width: 1240px;
 }
+
+[data-theme='dark'] {
+  /* Primary Brand (Brighter purple for dark mode contrast) */
+  --primary: #9d72ff;
+  --primary-hover: #8b5cf6;
+  --primary-active: #7c3aed;
+  --primary-light: rgba(157, 114, 255, 0.16);
+  --primary-border: rgba(157, 114, 255, 0.35);
+  --primary-glow: rgba(157, 114, 255, 0.25);
+
+  /* Neutrals & Surfaces */
+  --bg-app: #0b0f19;
+  --bg-surface: #141c2e;
+  --bg-surface-hover: #1c273e;
+  --bg-muted: #1c273e;
+  --bg-subtle: #111726;
+
+  /* Borders */
+  --border-subtle: #24324d;
+  --border-light: #192337;
+  --border-focus: #9d72ff;
+
+  /* Typography Colors */
+  --text-main: #f8fafc;
+  --text-body: #cbd5e1;
+  --text-muted: #94a3b8;
+  --text-subtle: #64748b;
+  --text-inverse: #0b0f19;
+
+  /* Status & Financial Accents */
+  --color-income: #34d399;
+  --color-income-hover: #10b981;
+  --color-income-bg: rgba(52, 211, 153, 0.14);
+  --color-income-border: rgba(52, 211, 153, 0.28);
+
+  --color-expense: #fb7185;
+  --color-expense-hover: #f43f5e;
+  --color-expense-bg: rgba(251, 113, 133, 0.14);
+  --color-expense-border: rgba(251, 113, 133, 0.28);
+
+  --color-info: #38bdf8;
+  --color-info-bg: rgba(56, 189, 248, 0.14);
+  --color-info-border: rgba(56, 189, 248, 0.28);
+
+  --color-warning: #fbbf24;
+  --color-warning-bg: rgba(251, 191, 36, 0.14);
+  --color-warning-border: rgba(251, 191, 36, 0.28);
+
+  /* Shadows (Dark elevation) */
+  --shadow-xs: 0 1px 2px 0 rgba(0, 0, 0, 0.5);
+  --shadow-sm: 0 2px 5px 0 rgba(0, 0, 0, 0.55);
+  --shadow-md: 0 4px 14px -2px rgba(0, 0, 0, 0.65);
+  --shadow-lg: 0 12px 28px -4px rgba(0, 0, 0, 0.75);
+  --shadow-purple: 0 8px 25px -4px rgba(157, 114, 255, 0.3);
+}

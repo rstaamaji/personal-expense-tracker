@@ -21,6 +21,7 @@ body {
   color: var(--text-body);
   line-height: 1.5;
   overflow-x: hidden;
+  transition: background-color var(--transition-normal), color var(--transition-normal);
 }
 
 /* App Structure */
@@ -110,7 +111,7 @@ button {
 }
 
 .card-base:hover {
-  border-color: #cbd5e1;
+  border-color: var(--border-focus);
 }
 
 /* Interactive elements */
@@ -120,7 +121,7 @@ button {
   justify-content: center;
   gap: 0.5rem;
   background-color: var(--primary);
-  color: var(--text-inverse);
+  color: #ffffff;
   font-weight: 600;
   font-size: 0.875rem;
   padding: 0.625rem 1.125rem;
@@ -152,7 +153,7 @@ button {
 
 .btn-secondary:hover {
   background-color: var(--bg-muted);
-  border-color: #cbd5e1;
+  border-color: var(--border-focus);
 }
 
 /* Responsive adjustments */
