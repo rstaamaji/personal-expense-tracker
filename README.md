@@ -8,45 +8,62 @@ Built by **Rustam Aji** as part of the **Aji 50 Days GitHub Challenge**.
 
 ## Project Status
 
-**Day 2 — Transaction CRUD + LocalStorage**
+**Day 4 Completed (Accelerated Development: Day 3 + Day 4)**
 
-The application now supports full client-side Transaction CRUD functionality backed by browser LocalStorage persistence, live statistics recalculation, Indonesian Rupiah formatting, and robust modal forms with input validation.
+The application now features comprehensive **Transaction Categories, Search & Combined Filtering** (Day 3) and full **Financial Analytics & Interactive Charts** (Day 4) using Recharts and live client-side data.
 
 ---
 
-## Day 2 — Transaction CRUD + LocalStorage
+## Day 3 — Categories, Search & Filtering
 
 ### Implemented:
-- **Create transaction**: Interactive modal form to create income and expense transactions with validation.
-- **Read transactions**: Dynamic list sorted chronologically (newest first) with category icons and timestamps.
-- **Update transaction**: Edit existing transactions via pre-filled modal form with auto-recalculation.
-- **Delete transaction**: Safe deletion with dedicated confirmation dialog (no browser `alert()`).
-- **LocalStorage persistence**: Storage key `expense_tracker_transactions` handling missing, empty, or corrupted data gracefully.
-- **Dynamic balance**: Automatically computed as `Total Income - Total Expense`.
-- **Dynamic income**: Sum of all recorded income transactions.
-- **Dynamic expense**: Sum of all recorded expense transactions.
-- **Dynamic transaction count**: Live count of recorded transactions.
-- **Indonesian Rupiah formatting**: Reusable currency formatter producing standard `Rp X.XXX.XXX` formats.
-- **Form validation**: Clear inline validation rules (name, positive amount, type, category, date).
-- **Responsive transaction interface**: Desktop, tablet, and mobile optimized list, cards, and modal dialogs.
-- **Empty state**: Clean placeholder guiding the user when no transactions exist.
+- **Static transaction categories**: Predefined expense categories (Food, Transportation, Education, Shopping, Bills, Entertainment, Health, Other) and income categories (Salary, Freelance, Business, Other).
+- **Search transactions**: Real-time, case-insensitive keyword search by transaction title.
+- **Income/expense filtering**: Segmented toggle to view All Types, Income only, or Expense only.
+- **Category filtering**: Dynamic category dropdown that auto-adapts according to the selected transaction type.
+- **Date filtering**: Quick timeframe selector for All Time, This Month, and This Week (Last 7 Days).
+- **Combined filters**: Search, type, category, and date filters all work cooperatively.
+- **Clear filters**: Dedicated reset button and removable filter chips to revert back to all transactions.
+- **Improved empty states**: Tailored empty states for:
+  - *No transactions in storage* ("No transactions yet.")
+  - *No search matches* ("No transactions match your search.")
+  - *No filter matches* ("No transactions match the selected filters.")
 
-### Privacy & Storage Considerations:
-- Transactions are stored locally in the browser (`localStorage`) and are **not** sent to a server, external API, GitHub, or third-party database in this version.
-- LocalStorage is suitable for this frontend prototype, but it should **NOT** be considered secure storage for passwords, authentication secrets, or highly sensitive financial credentials.
-- The application makes no claim of bank-grade security.
-- The repository contains only demo and mock transactions.
-- Day 2 is strictly frontend-only.
+---
+
+## Day 4 — Financial Analytics & Charts
+
+### Implemented:
+- **Income analytics**: Total earnings and count of income streams.
+- **Expense analytics**: Total expenditures and count of expense payments.
+- **Average expense**: Automatically calculated per expense transaction (`Total Expense / Expense Count`).
+- **Largest transaction analysis**: Real-time identification of Largest Expense and Largest Income.
+- **Savings rate**: Calculated as `((Income - Expense) / Income) * 100` with safe handling for zero income.
+- **Category spending analysis**: Granular breakdown of expense categories with amount, transaction count, percentage allocation, and progress bars.
+- **Income category analysis**: Breakdown of revenue sources with visual allocation indicators.
+- **Income vs Expense Chart**: Recharts comparative bar chart grouped chronologically by month with Rupiah tooltips.
+- **Spending Trend Chart**: Recharts smooth area timeline showing daily expense movements.
+- **Category Donut Charts**: Recharts donut charts showcasing expense and income distributions.
+
+---
+
+## Privacy & Storage Considerations
+
+- All transaction data is stored locally in the browser (`localStorage`) under the key `expense_tracker_transactions`.
+- Data is **never** sent to an external server, API, GitHub, or third-party database.
+- LocalStorage is intended for this frontend prototype and should **not** be considered secure storage for sensitive credentials.
+- The repository contains only demo transactions.
 
 ---
 
 ## Tech Stack
 
 - **Framework**: [React 19](https://react.dev/)
+- **Charts Library**: [Recharts](https://recharts.org/)
 - **Bundler & Tooling**: [Vite 8](https://vite.dev/)
 - **Linter**: [Oxlint](https://oxc.rs/)
 - **State & Storage**: React Hooks (`useState`, `useEffect`, `useMemo`, `useCallback`) + Browser `localStorage`
-- **Styling**: Modern CSS3 (CSS Custom Properties / Variables, Flexbox, CSS Grid)
+- **Styling**: Modern CSS3 (CSS Custom Properties / Variables, Flexbox, CSS Grid) with Light/Dark Theme Support
 - **Fonts**: Plus Jakarta Sans & Inter via Google Fonts
 - **Package Manager**: npm
 
@@ -57,30 +74,35 @@ The application now supports full client-side Transaction CRUD functionality bac
 ```
 src/
 ├── components/
+│   ├── AnalyticsSection.jsx   # Day 4 financial metrics & Recharts visualizer
+│   ├── AnalyticsSection.css   # Analytics metrics & chart container styles
 │   ├── DeleteConfirmModal.jsx # Deletion confirmation dialog
 │   ├── DeleteConfirmModal.css # Deletion dialog styling
-│   ├── Navbar.jsx             # Top navigation with brand & profile
+│   ├── Navbar.jsx             # Top navigation with brand, links & theme toggle
 │   ├── Navbar.css             # Navigation styling & responsive breakpoints
 │   ├── StatCard.jsx           # Reusable financial summary card component
 │   ├── StatCard.css           # Stat card styling & hover animations
+│   ├── TransactionFilters.jsx # Day 3 search, type, category & date toolbar
+│   ├── TransactionFilters.css # Search & filter toolbar styling
 │   ├── TransactionForm.jsx    # Add/Edit modal form with validation
 │   ├── TransactionForm.css    # Modal form styling & segmented controls
 │   ├── TransactionItem.jsx    # Transaction list item with action buttons
 │   └── TransactionItem.css    # Transaction row styling
 │
 ├── hooks/
-│   └── useTransactions.js     # CRUD operations, LocalStorage sync & live calculations
+│   ├── useTheme.js            # Light/Dark theme persistence & management
+│   └── useTransactions.js     # CRUD, Search, Filters, LocalStorage & Day 4 Analytics
 │
 ├── pages/
-│   ├── Dashboard.jsx          # Main dashboard page
-│   └── Dashboard.css          # Layout grid, SVG chart, and transactions styling
+│   ├── Dashboard.jsx          # Main dashboard orchestrator
+│   └── Dashboard.css          # Layout grid & empty state styling
 │
 ├── styles/
-│   ├── variables.css          # Centralized design tokens (colors, radii, shadows)
-│   └── globals.css            # Reset, typography, and base layout styles
+│   ├── variables.css          # Centralized light & dark design tokens
+│   └── globals.css            # Reset, typography, smooth scrolling & base layout
 │
 ├── utils/
-│   ├── constants.js           # Categories, icons, and default seed data
+│   ├── constants.js           # Categories, icons, palette & initial demo data
 │   └── formatters.js          # Indonesian Rupiah & date formatters
 │
 ├── App.jsx                    # Application layout container
@@ -91,10 +113,10 @@ src/
 
 ## 7-Day Roadmap
 
-- [x] **Day 1** — Dashboard Foundation
+- [x] **Day 1** — Dashboard Foundation *(Completed)*
 - [x] **Day 2** — Transaction CRUD + LocalStorage *(Completed)*
-- [ ] **Day 3** — Categories + Search + Filter
-- [ ] **Day 4** — Charts + Financial Analytics
+- [x] **Day 3** — Categories + Search + Filter *(Completed)*
+- [x] **Day 4** — Financial Analytics + Charts *(Completed)*
 - [ ] **Day 5** — Backend API + PostgreSQL
 - [ ] **Day 6** — Authentication + Security + Integration
 - [ ] **Day 7** — Testing + Polish + Deployment

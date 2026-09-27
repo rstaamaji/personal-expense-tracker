@@ -1,5 +1,5 @@
 /**
- * Constants for Transaction categories and storage keys.
+ * Constants for Transaction categories, storage keys, and visual tokens.
  */
 
 export const STORAGE_KEY = 'expense_tracker_transactions'
@@ -11,6 +11,7 @@ export const EXPENSE_CATEGORIES = [
   'Shopping',
   'Bills',
   'Entertainment',
+  'Health',
   'Other',
 ]
 
@@ -21,6 +22,11 @@ export const INCOME_CATEGORIES = [
   'Other',
 ]
 
+export const ALL_CATEGORIES = [
+  ...EXPENSE_CATEGORIES,
+  ...INCOME_CATEGORIES.filter((c) => !EXPENSE_CATEGORIES.includes(c)),
+]
+
 export const CATEGORY_ICONS = {
   Food: '🍔',
   Transportation: '🚗',
@@ -28,11 +34,42 @@ export const CATEGORY_ICONS = {
   Shopping: '🛍️',
   Bills: '🧾',
   Entertainment: '🎬',
+  Health: '💊',
   Salary: '💰',
   Freelance: '💼',
   Business: '📈',
   Other: '🏷️',
 }
+
+export const CATEGORY_COLORS = {
+  Food: '#f97316',
+  Transportation: '#3b82f6',
+  Education: '#8b5cf6',
+  Shopping: '#ec4899',
+  Bills: '#eab308',
+  Entertainment: '#06b6d4',
+  Health: '#14b8a6',
+  Salary: '#10b981',
+  Freelance: '#6366f1',
+  Business: '#0ea5e9',
+  Other: '#64748b',
+}
+
+/**
+ * Palette array for chart distribution
+ */
+export const CHART_PALETTE = [
+  '#7c3aed',
+  '#10b981',
+  '#f59e0b',
+  '#3b82f6',
+  '#ec4899',
+  '#06b6d4',
+  '#84cc16',
+  '#6366f1',
+  '#f43f5e',
+  '#64748b',
+]
 
 /**
  * Initial demo data seeded only if local storage has never been initialized.

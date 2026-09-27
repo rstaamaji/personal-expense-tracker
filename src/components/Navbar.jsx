@@ -36,22 +36,20 @@ export default function Navbar({ activeRoute = 'dashboard', theme = 'light', onT
           </li>
           <li>
             <a
-              href="#transactions"
-              className={`nav-link ${activeRoute === 'transactions' ? 'active' : ''}`}
-              title="Coming in later days"
+              href="#analytics-section"
+              className="nav-link"
+              title="Jump to Financial Analytics"
             >
-              Transactions
-              <span className="nav-tag">Day 3</span>
+              Analytics
             </a>
           </li>
           <li>
             <a
-              href="#analytics"
-              className={`nav-link ${activeRoute === 'analytics' ? 'active' : ''}`}
-              title="Coming in later days"
+              href="#transactions-section"
+              className="nav-link"
+              title="Jump to Transactions List"
             >
-              Analytics
-              <span className="nav-tag">Day 6</span>
+              Transactions
             </a>
           </li>
         </ul>
