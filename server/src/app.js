@@ -6,6 +6,7 @@ require('dotenv').config()
 const express = require('express')
 const cors = require('cors')
 const { testConnection } = require('./config/database')
+const authRoutes = require('./routes/authRoutes')
 const transactionRoutes = require('./routes/transactionRoutes')
 const { notFound, errorHandler } = require('./middleware/errorHandler')
 
@@ -34,7 +35,10 @@ app.get('/api/health', (req, res) => {
   })
 })
 
-// Transaction API routes
+// Authentication API routes (Day 6)
+app.use('/api/auth', authRoutes)
+
+// Transaction API routes (Protected by auth in transactionRoutes)
 app.use('/api/transactions', transactionRoutes)
 
 // 404 handler

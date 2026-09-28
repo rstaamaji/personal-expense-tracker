@@ -1,11 +1,24 @@
 import React from 'react'
+import { useAuth } from '../context/AuthContext'
 import './Navbar.css'
 
 /**
- * Navbar component for the Personal Expense Tracker application.
- * Provides clean navigation between app sections, theme toggling, and user profile indicator.
+ * Navbar component for the Personal Expense Tracker application (Day 6).
+ * Displays user profile, section navigation, and logout functionality.
  */
 export default function Navbar({ activeRoute = 'dashboard' }) {
+  const { user, logout } = useAuth()
+
+  const displayName = user?.name || 'Rustam Aji'
+  const displayRole = user?.email || 'Personal Workspace'
+
+  // Extract initials (e.g. "Rustam Aji" -> "RA")
+  const initials = displayName
+    .split(' ')
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((word) => word[0].toUpperCase())
+    .join('') || 'RA'
 
   return (
     <nav className="navbar" aria-label="Main Navigation">
@@ -16,9 +29,7 @@ export default function Navbar({ activeRoute = 'dashboard' }) {
             💰
           </div>
           <div className="brand-info">
-            <span className="brand-title">
-              Expense Tracker
-            </span>
+            <span className="brand-title">Expense Tracker</span>
           </div>
         </a>
 
@@ -53,16 +64,42 @@ export default function Navbar({ activeRoute = 'dashboard' }) {
           </li>
         </ul>
 
-        {/* Controls: User Profile */}
+        {/* Controls: User Profile & Logout */}
         <div className="navbar-user">
           {/* User Profile Card */}
-          <div className="profile-card" title="Signed in as Rustam Aji">
-            <div className="avatar-circle">RA</div>
+          <div className="profile-card" title={`Signed in as ${displayName}`}>
+            <div className="avatar-circle">{initials}</div>
             <div className="profile-info">
-              <span className="profile-name">Rustam Aji</span>
-              <span className="profile-role">Personal Workspace</span>
+              <span className="profile-name">{displayName}</span>
+              <span className="profile-role">{displayRole}</span>
             </div>
           </div>
+
+          {/* Logout Button */}
+          <button
+            type="button"
+            className="navbar-logout-btn"
+            onClick={logout}
+            title="Sign out of your account"
+            aria-label="Logout"
+          >
+            <svg
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              aria-hidden="true"
+            >
+              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+              <polyline points="16 17 21 12 16 7" />
+              <line x1="21" y1="12" x2="9" y2="12" />
+            </svg>
+            <span className="logout-text">Logout</span>
+          </button>
         </div>
       </div>
     </nav>

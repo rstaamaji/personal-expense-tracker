@@ -1,7 +1,12 @@
+/**
+ * useTransactions.js
+ * Custom hook for Transaction CRUD operations, Search, Filtering, and Financial Analytics.
+ * Connected to the authenticated PostgreSQL backend API (Day 6).
+ */
 import { useState, useEffect, useMemo, useCallback } from 'react'
+import { api } from '../utils/api'
+import { useAuth } from '../context/AuthContext'
 import {
-  STORAGE_KEY,
-  INITIAL_TRANSACTIONS,
   CATEGORY_COLORS,
   CATEGORY_ICONS,
 } from '../utils/constants'
@@ -13,74 +18,33 @@ import {
 } from '../utils/formatters'
 
 /**
- * Generate a unique ID using crypto.randomUUID with fallback.
+ * Normalizes backend transaction row into frontend representation.
  */
-function generateId() {
-  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
-    return crypto.randomUUID()
-  }
-  return `tx-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`
-}
-
-/**
- * Validate and sanitize a single transaction item.
- * Ensures properties exist and have valid types.
- */
-function isValidTransaction(tx) {
-  return (
-    tx &&
-    typeof tx === 'object' &&
-    typeof tx.id === 'string' &&
-    typeof tx.title === 'string' &&
-    tx.title.trim().length > 0 &&
-    (tx.type === 'income' || tx.type === 'expense') &&
-    typeof tx.category === 'string' &&
-    typeof tx.amount === 'number' &&
-    !isNaN(tx.amount) &&
-    tx.amount > 0 &&
-    typeof tx.date === 'string'
-  )
-}
-
-/**
- * Read and parse transactions from LocalStorage.
- * Handles missing storage, empty storage, invalid JSON, and corrupted data.
- */
-function loadTransactionsFromStorage() {
-  if (typeof window === 'undefined' || !window.localStorage) {
-    return INITIAL_TRANSACTIONS
+function normalizeTransaction(row) {
+  let dateStr = row.transaction_date || row.date || new Date().toISOString().slice(0, 10)
+  if (typeof dateStr === 'string' && dateStr.length > 10) {
+    dateStr = dateStr.slice(0, 10)
   }
 
-  try {
-    const rawData = window.localStorage.getItem(STORAGE_KEY)
-
-    // First visit: storage key does not exist yet -> initialize with initial demo data
-    if (rawData === null) {
-      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(INITIAL_TRANSACTIONS))
-      return INITIAL_TRANSACTIONS
-    }
-
-    const parsed = JSON.parse(rawData)
-
-    if (!Array.isArray(parsed)) {
-      console.warn('[LocalStorage] Expected array of transactions, received:', typeof parsed)
-      return INITIAL_TRANSACTIONS
-    }
-
-    // Filter and sanitize corrupted data
-    const sanitized = parsed.filter(isValidTransaction)
-    return sanitized
-  } catch (error) {
-    console.error('[LocalStorage] Failed to load transactions from localStorage:', error)
-    return INITIAL_TRANSACTIONS
+  return {
+    id: row.id,
+    title: row.title || '',
+    type: row.type || 'expense',
+    category: row.category || 'Other',
+    amount: Number(row.amount) || 0,
+    date: dateStr,
+    description: row.description || '',
+    created_at: row.created_at,
+    updated_at: row.updated_at,
   }
 }
 
-/**
- * Custom hook for Transaction CRUD operations, Search, Filtering, and Financial Analytics.
- */
 export function useTransactions() {
-  const [transactions, setTransactions] = useState(() => loadTransactionsFromStorage())
+  const { isAuthenticated, user } = useAuth()
+
+  const [transactions, setTransactions] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
 
   // Search & Filter State (Day 3)
   const [searchQuery, setSearchQuery] = useState('')
@@ -88,58 +52,106 @@ export function useTransactions() {
   const [categoryFilter, setCategoryFilter] = useState('all') // 'all' | category name
   const [dateFilter, setDateFilter] = useState('all') // 'all' | 'this_month' | 'this_week'
 
-  // Persist to LocalStorage whenever transactions state changes
-  useEffect(() => {
-    if (typeof window === 'undefined' || !window.localStorage) return
+  /**
+   * Fetch all transactions from PostgreSQL API for the authenticated user.
+   */
+  const fetchTransactions = useCallback(async () => {
+    if (!isAuthenticated) {
+      setTransactions([])
+      setLoading(false)
+      return
+    }
 
     try {
-      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(transactions))
-    } catch (error) {
-      console.error('[LocalStorage] Failed to save transactions to localStorage:', error)
+      setLoading(true)
+      setError(null)
+      const res = await api.get('/transactions')
+      if (res && res.data && Array.isArray(res.data)) {
+        setTransactions(res.data.map(normalizeTransaction))
+      } else {
+        setTransactions([])
+      }
+    } catch (err) {
+      console.warn('[Transactions] Fetch failed:', err.message)
+      setError(err.message)
+    } finally {
+      setLoading(false)
     }
-  }, [transactions])
+  }, [isAuthenticated])
+
+  useEffect(() => {
+    fetchTransactions()
+  }, [fetchTransactions, user?.id])
 
   /**
-   * Add a new transaction.
+   * Add a new transaction via POST /api/transactions.
    */
-  const addTransaction = useCallback((txData) => {
-    const newTx = {
-      id: generateId(),
-      title: txData.title.trim(),
-      type: txData.type,
-      category: txData.category,
-      amount: Math.abs(Number(txData.amount)),
-      date: txData.date,
-    }
+  const addTransaction = useCallback(async (txData) => {
+    try {
+      setError(null)
+      const payload = {
+        title: txData.title.trim(),
+        type: txData.type,
+        category: txData.category,
+        amount: Math.abs(Number(txData.amount)),
+        transaction_date: txData.date,
+        description: txData.description || null,
+      }
 
-    setTransactions((prev) => [newTx, ...prev])
-    return newTx
+      const res = await api.post('/transactions', payload)
+      if (res && res.data) {
+        const created = normalizeTransaction(res.data)
+        setTransactions((prev) => [created, ...prev])
+        return { success: true, data: created }
+      }
+      throw new Error((res && res.message) || 'Failed to create transaction')
+    } catch (err) {
+      setError(err.message)
+      throw err
+    }
   }, [])
 
   /**
-   * Update an existing transaction.
+   * Update an existing transaction via PUT /api/transactions/:id.
    */
-  const updateTransaction = useCallback((id, updatedData) => {
-    setTransactions((prev) =>
-      prev.map((item) => {
-        if (item.id !== id) return item
-        return {
-          ...item,
-          title: updatedData.title ? updatedData.title.trim() : item.title,
-          type: updatedData.type || item.type,
-          category: updatedData.category || item.category,
-          amount: updatedData.amount !== undefined ? Math.abs(Number(updatedData.amount)) : item.amount,
-          date: updatedData.date || item.date,
-        }
-      })
-    )
+  const updateTransaction = useCallback(async (id, updatedData) => {
+    try {
+      setError(null)
+      const payload = {
+        title: updatedData.title.trim(),
+        type: updatedData.type,
+        category: updatedData.category,
+        amount: Math.abs(Number(updatedData.amount)),
+        transaction_date: updatedData.date,
+        description: updatedData.description || null,
+      }
+
+      const res = await api.put(`/transactions/${id}`, payload)
+      if (res && res.data) {
+        const updated = normalizeTransaction(res.data)
+        setTransactions((prev) => prev.map((item) => (item.id === id ? updated : item)))
+        return { success: true, data: updated }
+      }
+      throw new Error((res && res.message) || 'Failed to update transaction')
+    } catch (err) {
+      setError(err.message)
+      throw err
+    }
   }, [])
 
   /**
-   * Delete a transaction by ID.
+   * Delete a transaction by ID via DELETE /api/transactions/:id.
    */
-  const deleteTransaction = useCallback((id) => {
-    setTransactions((prev) => prev.filter((item) => item.id !== id))
+  const deleteTransaction = useCallback(async (id) => {
+    try {
+      setError(null)
+      await api.delete(`/transactions/${id}`)
+      setTransactions((prev) => prev.filter((item) => item.id !== id))
+      return { success: true }
+    } catch (err) {
+      setError(err.message)
+      throw err
+    }
   }, [])
 
   /**
@@ -198,7 +210,7 @@ export function useTransactions() {
         return false
       }
 
-      // Date filter
+      // Date range filter
       if (dateFilter === 'this_month' && !isDateInThisMonth(tx.date)) {
         return false
       }
@@ -211,7 +223,7 @@ export function useTransactions() {
   }, [sortedTransactions, searchQuery, typeFilter, categoryFilter, dateFilter])
 
   /**
-   * Comprehensive Financial Statistics (Day 4).
+   * Financial summary metrics and key analytics indicators (Day 4).
    */
   const stats = useMemo(() => {
     let totalIncome = 0
@@ -240,11 +252,12 @@ export function useTransactions() {
     const totalBalance = totalIncome - totalExpense
     const transactionCount = transactions.length
     const averageExpense = expenseCount > 0 ? Math.round(totalExpense / expenseCount) : 0
-
-    // Savings rate = ((Income - Expense) / Income) * 100
-    // Handles zero income safely without NaN or Infinity
     const savingsRate =
-      totalIncome > 0 ? Math.round(((totalIncome - totalExpense) / totalIncome) * 100) : 0
+      totalIncome > 0
+        ? Math.round(((totalIncome - totalExpense) / totalIncome) * 100)
+        : totalExpense > 0
+          ? -100
+          : 0
 
     return {
       totalBalance,
@@ -261,14 +274,18 @@ export function useTransactions() {
   }, [transactions])
 
   /**
-   * Expense breakdown by category (Day 4).
+   * Category spending breakdown for expense transactions (Day 4).
    */
   const expenseByCategory = useMemo(() => {
     const map = new Map()
 
     for (const tx of transactions) {
       if (tx.type === 'expense') {
-        const current = map.get(tx.category) || { category: tx.category, amount: 0, count: 0 }
+        const current = map.get(tx.category) || {
+          category: tx.category,
+          amount: 0,
+          count: 0,
+        }
         current.amount += tx.amount
         current.count += 1
         map.set(tx.category, current)
@@ -279,23 +296,26 @@ export function useTransactions() {
     const list = Array.from(map.values()).map((item) => ({
       ...item,
       percentage: Math.round((item.amount / totalExpense) * 100),
-      color: CATEGORY_COLORS[item.category] || '#64748b',
+      color: CATEGORY_COLORS[item.category] || '#a855f7',
       icon: CATEGORY_ICONS[item.category] || '🏷️',
     }))
 
-    // Sort by amount descending
     return list.sort((a, b) => b.amount - a.amount)
   }, [transactions, stats.totalExpense])
 
   /**
-   * Income breakdown by category (Day 4).
+   * Category earnings breakdown for income transactions (Day 4).
    */
   const incomeByCategory = useMemo(() => {
     const map = new Map()
 
     for (const tx of transactions) {
       if (tx.type === 'income') {
-        const current = map.get(tx.category) || { category: tx.category, amount: 0, count: 0 }
+        const current = map.get(tx.category) || {
+          category: tx.category,
+          amount: 0,
+          count: 0,
+        }
         current.amount += tx.amount
         current.count += 1
         map.set(tx.category, current)
@@ -322,7 +342,6 @@ export function useTransactions() {
 
     const map = new Map()
 
-    // Aggregate by month
     for (const tx of transactions) {
       const monthKey = tx.date ? tx.date.substring(0, 7) : '2026-09'
       const existing = map.get(monthKey) || {
@@ -341,7 +360,6 @@ export function useTransactions() {
       map.set(monthKey, existing)
     }
 
-    // Sort chronologically
     return Array.from(map.values()).sort((a, b) => a.monthKey.localeCompare(b.monthKey))
   }, [transactions])
 
@@ -365,7 +383,6 @@ export function useTransactions() {
       }
     }
 
-    // Sort chronologically ascending for the timeline
     return Array.from(map.values()).sort((a, b) => a.date.localeCompare(b.date))
   }, [transactions])
 
@@ -380,6 +397,9 @@ export function useTransactions() {
     addTransaction,
     updateTransaction,
     deleteTransaction,
+    fetchTransactions,
+    loading,
+    error,
     // Filters
     searchQuery,
     setSearchQuery,

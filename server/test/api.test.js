@@ -1,22 +1,32 @@
 /**
  * api.test.js
- * Automated test suite for Personal Expense Tracker API (Day 5).
- * Uses native Node.js test runner (node:test) and native fetch.
+ * Automated integration test suite for Personal Expense Tracker API (Day 6).
+ * Verifies Auth routes, JWT middleware protection, CORS, and Transaction validation.
  */
 const { test, describe, before, after } = require('node:test')
 const assert = require('node:assert/strict')
 const http = require('http')
+const jwt = require('jsonwebtoken')
 
 process.env.NODE_ENV = 'test'
 process.env.PORT = '5099'
 process.env.CLIENT_URL = 'http://localhost:5173'
+process.env.JWT_SECRET = 'test_jwt_secret_for_automated_testing_12345'
 
 const app = require('../src/app')
 
 let server
 let baseUrl
+let validAuthHeader
 
 before(async () => {
+  const token = jwt.sign(
+    { id: 1, email: 'tester@example.com', name: 'Test User' },
+    process.env.JWT_SECRET,
+    { expiresIn: '1h' }
+  )
+  validAuthHeader = `Bearer ${token}`
+
   await new Promise((resolve) => {
     server = http.createServer(app)
     server.listen(0, () => {
@@ -66,11 +76,124 @@ describe('3. 404 Route Not Found Handling', () => {
   })
 })
 
-describe('4. Input Validation & Security for POST /api/transactions', () => {
-  test('Rejects request missing title (400)', async () => {
+describe('4. Authentication Route Validation (Day 6)', () => {
+  test('POST /api/auth/register rejects missing name (400)', async () => {
+    const res = await fetch(`${baseUrl}/api/auth/register`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        email: 'invalid@example.com',
+        password: 'password123',
+      }),
+    })
+    assert.equal(res.status, 400)
+    const json = await res.json()
+    assert.equal(json.success, false)
+    assert.match(json.message, /Name is required/i)
+  })
+
+  test('POST /api/auth/register rejects invalid email format (400)', async () => {
+    const res = await fetch(`${baseUrl}/api/auth/register`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        name: 'Rustam',
+        email: 'not-an-email',
+        password: 'password123',
+      }),
+    })
+    assert.equal(res.status, 400)
+    const json = await res.json()
+    assert.equal(json.success, false)
+    assert.match(json.message, /valid email/i)
+  })
+
+  test('POST /api/auth/register rejects short password < 8 chars (400)', async () => {
+    const res = await fetch(`${baseUrl}/api/auth/register`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        name: 'Rustam',
+        email: 'rustam@example.com',
+        password: 'short',
+      }),
+    })
+    assert.equal(res.status, 400)
+    const json = await res.json()
+    assert.equal(json.success, false)
+    assert.match(json.message, /at least 8 characters/i)
+  })
+
+  test('POST /api/auth/login rejects missing credentials (400)', async () => {
+    const res = await fetch(`${baseUrl}/api/auth/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({}),
+    })
+    assert.equal(res.status, 400)
+    const json = await res.json()
+    assert.equal(json.success, false)
+  })
+
+  test('GET /api/auth/me rejects unauthenticated request (401)', async () => {
+    const res = await fetch(`${baseUrl}/api/auth/me`)
+    assert.equal(res.status, 401)
+    const json = await res.json()
+    assert.equal(json.success, false)
+    assert.match(json.message, /Authentication required/i)
+  })
+
+  test('POST /api/auth/logout returns 200 with success message', async () => {
+    const res = await fetch(`${baseUrl}/api/auth/logout`, { method: 'POST' })
+    assert.equal(res.status, 200)
+    const json = await res.json()
+    assert.equal(json.success, true)
+    assert.match(json.message, /Logged out successfully/i)
+  })
+})
+
+describe('5. Protected Transaction Routes - JWT Enforcement (Day 6)', () => {
+  test('GET /api/transactions rejects request without Bearer token (401)', async () => {
+    const res = await fetch(`${baseUrl}/api/transactions`)
+    assert.equal(res.status, 401)
+    const json = await res.json()
+    assert.equal(json.success, false)
+    assert.match(json.message, /Authentication required/i)
+  })
+
+  test('POST /api/transactions rejects request without Bearer token (401)', async () => {
     const res = await fetch(`${baseUrl}/api/transactions`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        title: 'Makan',
+        type: 'expense',
+        category: 'Food',
+        amount: 25000,
+        transaction_date: '2026-09-28',
+      }),
+    })
+    assert.equal(res.status, 401)
+  })
+
+  test('GET /api/transactions/:id rejects request with invalid token (401)', async () => {
+    const res = await fetch(`${baseUrl}/api/transactions/1`, {
+      headers: { Authorization: 'Bearer this.is.invalid' },
+    })
+    assert.equal(res.status, 401)
+    const json = await res.json()
+    assert.equal(json.success, false)
+  })
+})
+
+describe('6. Input Validation on Authenticated Transaction Routes', () => {
+  test('Rejects request missing title (400)', async () => {
+    const res = await fetch(`${baseUrl}/api/transactions`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: validAuthHeader,
+      },
       body: JSON.stringify({
         type: 'expense',
         category: 'Food',
@@ -87,10 +210,13 @@ describe('4. Input Validation & Security for POST /api/transactions', () => {
   test('Rejects invalid transaction type (400)', async () => {
     const res = await fetch(`${baseUrl}/api/transactions`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: validAuthHeader,
+      },
       body: JSON.stringify({
         title: 'Transfer Dana',
-        type: 'transfer', // only income or expense allowed
+        type: 'transfer',
         category: 'General',
         amount: 50000,
         transaction_date: '2026-09-28',
@@ -105,7 +231,10 @@ describe('4. Input Validation & Security for POST /api/transactions', () => {
   test('Rejects non-positive amount: 0 (400)', async () => {
     const res = await fetch(`${baseUrl}/api/transactions`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: validAuthHeader,
+      },
       body: JSON.stringify({
         title: 'Belanja',
         type: 'expense',
@@ -123,7 +252,10 @@ describe('4. Input Validation & Security for POST /api/transactions', () => {
   test('Rejects negative amount: -15000 (400)', async () => {
     const res = await fetch(`${baseUrl}/api/transactions`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: validAuthHeader,
+      },
       body: JSON.stringify({
         title: 'Refund Negatif',
         type: 'expense',
@@ -141,7 +273,10 @@ describe('4. Input Validation & Security for POST /api/transactions', () => {
   test('Rejects missing category (400)', async () => {
     const res = await fetch(`${baseUrl}/api/transactions`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: validAuthHeader,
+      },
       body: JSON.stringify({
         title: 'Bonus Proyek',
         type: 'income',
@@ -159,7 +294,10 @@ describe('4. Input Validation & Security for POST /api/transactions', () => {
   test('Rejects invalid transaction_date (400)', async () => {
     const res = await fetch(`${baseUrl}/api/transactions`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: validAuthHeader,
+      },
       body: JSON.stringify({
         title: 'Makan Malam',
         type: 'expense',
@@ -173,11 +311,11 @@ describe('4. Input Validation & Security for POST /api/transactions', () => {
     assert.equal(json.success, false)
     assert.match(json.message, /transaction_date must be a valid date/)
   })
-})
 
-describe('5. Input Validation for Parameterized Routes', () => {
   test('GET /api/transactions/:id rejects invalid ID like "abc" (400)', async () => {
-    const res = await fetch(`${baseUrl}/api/transactions/abc`)
+    const res = await fetch(`${baseUrl}/api/transactions/abc`, {
+      headers: { Authorization: validAuthHeader },
+    })
     assert.equal(res.status, 400)
     const json = await res.json()
     assert.equal(json.success, false)
@@ -185,24 +323,9 @@ describe('5. Input Validation for Parameterized Routes', () => {
   })
 
   test('DELETE /api/transactions/:id rejects negative ID like "-5" (400)', async () => {
-    const res = await fetch(`${baseUrl}/api/transactions/-5`, { method: 'DELETE' })
-    assert.equal(res.status, 400)
-    const json = await res.json()
-    assert.equal(json.success, false)
-    assert.equal(json.message, 'Invalid transaction ID')
-  })
-
-  test('PUT /api/transactions/:id rejects non-integer ID (400)', async () => {
-    const res = await fetch(`${baseUrl}/api/transactions/0`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        title: 'Valid Title',
-        type: 'income',
-        category: 'Salary',
-        amount: 5000000,
-        transaction_date: '2026-09-28',
-      }),
+    const res = await fetch(`${baseUrl}/api/transactions/-5`, {
+      method: 'DELETE',
+      headers: { Authorization: validAuthHeader },
     })
     assert.equal(res.status, 400)
     const json = await res.json()

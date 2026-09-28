@@ -1,6 +1,6 @@
 /**
  * transactionRoutes.js
- * Defines all /api/transactions routes.
+ * Defines all /api/transactions routes (Protected by authMiddleware).
  */
 const express = require('express')
 const {
@@ -10,11 +10,15 @@ const {
   updateTransaction,
   deleteTransaction,
 } = require('../controllers/transactionController')
+const authMiddleware = require('../middleware/authMiddleware')
 
 const router = express.Router()
 
-// GET  /api/transactions        — list all
-// POST /api/transactions        — create new
+// Require JWT authentication for all transaction operations
+router.use(authMiddleware)
+
+// GET  /api/transactions        — list all (scoped to authenticated user)
+// POST /api/transactions        — create new (associated with authenticated user)
 router.route('/').get(getTransactions).post(createTransaction)
 
 // GET    /api/transactions/:id  — get one

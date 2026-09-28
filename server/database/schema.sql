@@ -1,19 +1,25 @@
 -- =============================================================
--- Personal Expense Tracker — Database Schema
--- Day 5: PostgreSQL Setup
+-- Personal Expense Tracker — Database Schema (Day 6)
+-- PostgreSQL Setup with User Authentication
 -- =============================================================
--- Run this file to initialize the database schema.
+-- Run this file to initialize the complete database schema.
 -- It is safe to run multiple times (uses IF NOT EXISTS).
 -- =============================================================
 
--- Create the database (run this separately as a superuser if needed):
--- CREATE DATABASE expense_tracker;
+-- ---- 1. Users Table ----
+CREATE TABLE IF NOT EXISTS users (
+  id            SERIAL PRIMARY KEY,
+  name          VARCHAR(100) NOT NULL,
+  email         VARCHAR(150) UNIQUE NOT NULL,
+  password_hash TEXT         NOT NULL,
+  created_at    TIMESTAMP    DEFAULT CURRENT_TIMESTAMP,
+  updated_at    TIMESTAMP    DEFAULT CURRENT_TIMESTAMP
+);
 
--- Connect to the expense_tracker database before running the rest.
-
--- ---- Transactions Table ----
+-- ---- 2. Transactions Table ----
 CREATE TABLE IF NOT EXISTS transactions (
   id               SERIAL PRIMARY KEY,
+  user_id          INTEGER        NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   title            VARCHAR(150)   NOT NULL,
   type             VARCHAR(20)    NOT NULL CHECK (type IN ('income', 'expense')),
   category         VARCHAR(50)    NOT NULL,
@@ -24,7 +30,7 @@ CREATE TABLE IF NOT EXISTS transactions (
   updated_at       TIMESTAMP      DEFAULT CURRENT_TIMESTAMP
 );
 
--- ---- Auto-update updated_at on row change ----
+-- ---- 3. Auto-update triggers ----
 CREATE OR REPLACE FUNCTION update_updated_at_column()
 RETURNS TRIGGER AS $$
 BEGIN
@@ -33,14 +39,21 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-DROP TRIGGER IF EXISTS set_updated_at ON transactions;
+DROP TRIGGER IF EXISTS set_users_updated_at ON users;
+CREATE TRIGGER set_users_updated_at
+BEFORE UPDATE ON users
+FOR EACH ROW
+EXECUTE FUNCTION update_updated_at_column();
 
-CREATE TRIGGER set_updated_at
+DROP TRIGGER IF EXISTS set_transactions_updated_at ON transactions;
+CREATE TRIGGER set_transactions_updated_at
 BEFORE UPDATE ON transactions
 FOR EACH ROW
 EXECUTE FUNCTION update_updated_at_column();
 
--- ---- Useful indexes ----
+-- ---- 4. Performance Indexes ----
+CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
+CREATE INDEX IF NOT EXISTS idx_transactions_user_id ON transactions(user_id);
 CREATE INDEX IF NOT EXISTS idx_transactions_type ON transactions(type);
 CREATE INDEX IF NOT EXISTS idx_transactions_date ON transactions(transaction_date);
 CREATE INDEX IF NOT EXISTS idx_transactions_category ON transactions(category);

@@ -1,6 +1,7 @@
 /**
  * transactionController.js
  * Handles all CRUD operations for the transactions table.
+ * Strictly scopes every database operation to the authenticated req.user.id.
  * Uses parameterized queries to prevent SQL injection.
  */
 const { pool } = require('../config/database')
@@ -50,14 +51,18 @@ function validateTransaction(body) {
 
 // ================================================================
 // GET /api/transactions
-// Returns all transactions ordered by transaction_date DESC
+// Returns all transactions belonging to the authenticated user
 // ================================================================
 async function getTransactions(req, res, next) {
   try {
+    const userId = req.user.id
+
     const { rows } = await pool.query(
-      `SELECT id, title, type, category, amount, transaction_date, description, created_at, updated_at
+      `SELECT id, user_id, title, type, category, amount, transaction_date, description, created_at, updated_at
        FROM transactions
-       ORDER BY transaction_date DESC, created_at DESC`
+       WHERE user_id = $1
+       ORDER BY transaction_date DESC, created_at DESC`,
+      [userId]
     )
     res.json({ success: true, data: rows })
   } catch (err) {
@@ -67,11 +72,12 @@ async function getTransactions(req, res, next) {
 
 // ================================================================
 // GET /api/transactions/:id
-// Returns a single transaction by ID
+// Returns a single transaction by ID, only if owned by req.user.id
 // ================================================================
 async function getTransactionById(req, res, next) {
   try {
     const { id } = req.params
+    const userId = req.user.id
 
     // Validate that id is a positive integer
     if (!Number.isInteger(Number(id)) || Number(id) <= 0) {
@@ -79,10 +85,10 @@ async function getTransactionById(req, res, next) {
     }
 
     const { rows } = await pool.query(
-      `SELECT id, title, type, category, amount, transaction_date, description, created_at, updated_at
+      `SELECT id, user_id, title, type, category, amount, transaction_date, description, created_at, updated_at
        FROM transactions
-       WHERE id = $1`,
-      [id]
+       WHERE id = $1 AND user_id = $2`,
+      [id, userId]
     )
 
     if (rows.length === 0) {
@@ -97,10 +103,11 @@ async function getTransactionById(req, res, next) {
 
 // ================================================================
 // POST /api/transactions
-// Creates a new transaction
+// Creates a new transaction bound to the authenticated user
 // ================================================================
 async function createTransaction(req, res, next) {
   try {
+    const userId = req.user.id
     const errors = validateTransaction(req.body)
     if (errors.length > 0) {
       return res.status(400).json({ success: false, message: errors.join('; ') })
@@ -109,10 +116,11 @@ async function createTransaction(req, res, next) {
     const { title, type, category, amount, transaction_date, description } = req.body
 
     const { rows } = await pool.query(
-      `INSERT INTO transactions (title, type, category, amount, transaction_date, description)
-       VALUES ($1, $2, $3, $4, $5, $6)
-       RETURNING id, title, type, category, amount, transaction_date, description, created_at, updated_at`,
+      `INSERT INTO transactions (user_id, title, type, category, amount, transaction_date, description)
+       VALUES ($1, $2, $3, $4, $5, $6, $7)
+       RETURNING id, user_id, title, type, category, amount, transaction_date, description, created_at, updated_at`,
       [
+        userId,
         title.trim(),
         type,
         category.trim(),
@@ -134,11 +142,12 @@ async function createTransaction(req, res, next) {
 
 // ================================================================
 // PUT /api/transactions/:id
-// Updates an existing transaction
+// Updates an existing transaction, only if owned by req.user.id
 // ================================================================
 async function updateTransaction(req, res, next) {
   try {
     const { id } = req.params
+    const userId = req.user.id
 
     if (!Number.isInteger(Number(id)) || Number(id) <= 0) {
       return res.status(400).json({ success: false, message: 'Invalid transaction ID' })
@@ -159,8 +168,8 @@ async function updateTransaction(req, res, next) {
            amount           = $4,
            transaction_date = $5,
            description      = $6
-       WHERE id = $7
-       RETURNING id, title, type, category, amount, transaction_date, description, created_at, updated_at`,
+       WHERE id = $7 AND user_id = $8
+       RETURNING id, user_id, title, type, category, amount, transaction_date, description, created_at, updated_at`,
       [
         title.trim(),
         type,
@@ -169,6 +178,7 @@ async function updateTransaction(req, res, next) {
         transaction_date,
         description ? description.trim() : null,
         id,
+        userId,
       ]
     )
 
@@ -188,11 +198,12 @@ async function updateTransaction(req, res, next) {
 
 // ================================================================
 // DELETE /api/transactions/:id
-// Deletes a transaction
+// Deletes a transaction, only if owned by req.user.id
 // ================================================================
 async function deleteTransaction(req, res, next) {
   try {
     const { id } = req.params
+    const userId = req.user.id
 
     if (!Number.isInteger(Number(id)) || Number(id) <= 0) {
       return res.status(400).json({ success: false, message: 'Invalid transaction ID' })
@@ -200,9 +211,9 @@ async function deleteTransaction(req, res, next) {
 
     const { rows } = await pool.query(
       `DELETE FROM transactions
-       WHERE id = $1
+       WHERE id = $1 AND user_id = $2
        RETURNING id`,
-      [id]
+      [id, userId]
     )
 
     if (rows.length === 0) {
@@ -221,4 +232,5 @@ module.exports = {
   createTransaction,
   updateTransaction,
   deleteTransaction,
+  validateTransaction,
 }
