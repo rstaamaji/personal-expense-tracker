@@ -7,10 +7,12 @@ import TransactionItem from '../components/TransactionItem'
 import TransactionForm from '../components/TransactionForm'
 import DeleteConfirmModal from '../components/DeleteConfirmModal'
 import { useTransactions } from '../hooks/useTransactions'
+import { useAuth } from '../hooks/useAuth'
 import { formatRupiah } from '../utils/formatters'
 import './Dashboard.css'
 
 export default function Dashboard() {
+  const { user } = useAuth()
   const {
     transactions,
     filteredTransactions,
@@ -22,6 +24,8 @@ export default function Dashboard() {
     addTransaction,
     updateTransaction,
     deleteTransaction,
+    loading,
+    error,
     // Filters (Day 3)
     searchQuery,
     setSearchQuery,
@@ -92,7 +96,7 @@ export default function Dashboard() {
           ================================================== */}
       <header className="dashboard-header" id="dashboard">
         <div className="dashboard-title-group">
-          <h1 className="dashboard-title">Good morning, Rustam Aji 👋</h1>
+          <h1 className="dashboard-title">Good morning, {user?.name || 'Rustam Aji'} 👋</h1>
           <p className="dashboard-subtitle">Here's an overview of your finances.</p>
         </div>
 
@@ -114,7 +118,7 @@ export default function Dashboard() {
               <line x1="8" y1="2" x2="8" y2="6" />
               <line x1="3" y1="10" x2="21" y2="10" />
             </svg>
-            <span>September 27, 2026</span>
+            <span>September 28, 2026</span>
           </div>
 
           <button
@@ -162,7 +166,7 @@ export default function Dashboard() {
         <StatCard
           label="Transactions"
           value={String(stats.transactionCount)}
-          subtext="Stored in LocalStorage"
+          subtext="Stored in PostgreSQL"
           type="transactions"
           badgeText={`${stats.transactionCount} total`}
           badgeTrend="neutral"
@@ -217,6 +221,24 @@ export default function Dashboard() {
         </div>
 
         <section className="dashboard-card" style={{ gap: '1rem', marginTop: '1rem' }} aria-label="Transaction records and search">
+          {error && (
+            <div style={{
+              margin: '1rem 1.25rem 0',
+              padding: '0.65rem 0.875rem',
+              borderRadius: 'var(--radius-md)',
+              background: 'rgba(244, 63, 94, 0.12)',
+              border: '1px solid rgba(244, 63, 94, 0.3)',
+              color: 'var(--expense)',
+              fontSize: '0.8rem',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.5rem',
+            }}>
+              <span>⚠️</span>
+              <span>{error}</span>
+            </div>
+          )}
+
           {/* Search and Filters Toolbar (Day 3) */}
           <TransactionFilters
             searchQuery={searchQuery}
@@ -233,8 +255,14 @@ export default function Dashboard() {
             hasActiveFilters={hasActiveFilters}
           />
 
-          {/* Dynamic Transaction List & Empty State Handlers */}
-          {transactions.length === 0 ? (
+          {loading && transactions.length === 0 ? (
+            <div className="transactions-empty-state">
+              <div className="auth-spinner" style={{ width: 28, height: 28, borderWidth: 3, borderTopColor: 'var(--cyan)' }} />
+              <p className="empty-state-desc" style={{ marginTop: '0.5rem' }}>
+                Loading transactions from database...
+              </p>
+            </div>
+          ) : transactions.length === 0 ? (
             /* State 1: No transactions in storage */
             <div className="transactions-empty-state">
               <div className="empty-state-icon" aria-hidden="true">

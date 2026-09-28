@@ -2,53 +2,45 @@
  * AuthContext.jsx
  * Centralized authentication state management for Personal Expense Tracker (Day 6).
  */
-import React, { createContext, useContext, useState, useEffect, useCallback } from 'react'
+import React, { useState, useEffect, useCallback, useMemo } from 'react'
+import { AuthContext } from './authContextInstance'
 import { api, getAuthToken, setAuthToken, removeAuthToken } from '../utils/api'
-
-const AuthContext = createContext(null)
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null)
   const [token, setToken] = useState(() => getAuthToken())
-  const [loading, setLoading] = useState(true)
+  const [loading, setLoading] = useState(() => Boolean(getAuthToken()))
   const [authError, setAuthError] = useState(null)
-
-  /**
-   * Restore user session using stored JWT token.
-   */
-  const restoreSession = useCallback(async () => {
-    const existingToken = getAuthToken()
-    if (!existingToken) {
-      setUser(null)
-      setToken(null)
-      setLoading(false)
-      return
-    }
-
-    try {
-      setLoading(true)
-      const res = await api.get('/auth/me')
-      if (res && res.data && res.data.user) {
-        setUser(res.data.user)
-        setToken(existingToken)
-      } else {
-        removeAuthToken()
-        setUser(null)
-        setToken(null)
-      }
-    } catch (err) {
-      console.warn('[AUTH] Session restoration failed:', err.message)
-      removeAuthToken()
-      setUser(null)
-      setToken(null)
-    } finally {
-      setLoading(false)
-    }
-  }, [])
 
   // Restore session on initial load and listen for 401 expiration events
   useEffect(() => {
-    restoreSession()
+    const storedToken = getAuthToken()
+    if (!storedToken) {
+      return
+    }
+
+    let isMounted = true
+    api.get('/auth/me')
+      .then((res) => {
+        if (!isMounted) return
+        if (res && res.data && res.data.user) {
+          setUser(res.data.user)
+          setToken(storedToken)
+        } else {
+          removeAuthToken()
+          setUser(null)
+          setToken(null)
+        }
+      })
+      .catch(() => {
+        if (!isMounted) return
+        removeAuthToken()
+        setUser(null)
+        setToken(null)
+      })
+      .finally(() => {
+        if (isMounted) setLoading(false)
+      })
 
     const handleExpired = () => {
       setUser(null)
@@ -57,8 +49,11 @@ export function AuthProvider({ children }) {
     }
 
     window.addEventListener('auth:expired', handleExpired)
-    return () => window.removeEventListener('auth:expired', handleExpired)
-  }, [restoreSession])
+    return () => {
+      isMounted = false
+      window.removeEventListener('auth:expired', handleExpired)
+    }
+  }, [])
 
   /**
    * Register a new user account.
@@ -114,28 +109,22 @@ export function AuthProvider({ children }) {
     }
   }, [])
 
-  const value = {
-    user,
-    token,
-    isAuthenticated: Boolean(user && token),
-    loading,
-    authError,
-    setAuthError,
-    login,
-    register,
-    logout,
-    restoreSession,
-  }
+  const value = useMemo(
+    () => ({
+      user,
+      token,
+      isAuthenticated: Boolean(user && token),
+      loading,
+      authError,
+      setAuthError,
+      login,
+      register,
+      logout,
+    }),
+    [user, token, loading, authError, login, register, logout]
+  )
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
 }
 
-export function useAuth() {
-  const context = useContext(AuthContext)
-  if (!context) {
-    throw new Error('useAuth must be used within an AuthProvider')
-  }
-  return context
-}
-
-export default AuthContext
+export default AuthProvider

@@ -5,7 +5,7 @@
  */
 import { useState, useEffect, useMemo, useCallback } from 'react'
 import { api } from '../utils/api'
-import { useAuth } from '../context/AuthContext'
+import { useAuth } from './useAuth'
 import {
   CATEGORY_COLORS,
   CATEGORY_ICONS,
@@ -80,8 +80,33 @@ export function useTransactions() {
   }, [isAuthenticated])
 
   useEffect(() => {
-    fetchTransactions()
-  }, [fetchTransactions, user?.id])
+    if (!isAuthenticated) {
+      return
+    }
+
+    let isMounted = true
+    api.get('/transactions')
+      .then((res) => {
+        if (!isMounted) return
+        if (res && res.data && Array.isArray(res.data)) {
+          setTransactions(res.data.map(normalizeTransaction))
+        } else {
+          setTransactions([])
+        }
+      })
+      .catch((err) => {
+        if (!isMounted) return
+        console.warn('[Transactions] Fetch failed:', err.message)
+        setError(err.message)
+      })
+      .finally(() => {
+        if (isMounted) setLoading(false)
+      })
+
+    return () => {
+      isMounted = false
+    }
+  }, [isAuthenticated, user?.id])
 
   /**
    * Add a new transaction via POST /api/transactions.

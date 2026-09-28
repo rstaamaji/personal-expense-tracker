@@ -143,6 +143,32 @@ src/
 
 ---
 
+## Day 6 — Authentication + Security + Frontend Integration
+
+### Implemented:
+- **User Authentication System**: Fully featured registration, login, session validation (`/api/auth/me`), and logout endpoints.
+- **Secure Password Hashing**: Utilizes `bcrypt` with salt rounds = 10; raw passwords are never saved or returned.
+- **JWT Authorization**: Stateless JSON Web Token authentication with Bearer tokens; tokens signed using `JWT_SECRET` from environment variables.
+- **Protected Transaction API & User Isolation**: All transaction routes are strictly guarded by `authMiddleware`. Every SQL query filters by `WHERE user_id = $1` to guarantee complete tenant isolation between users.
+- **PostgreSQL Source of Truth**: Replaced frontend `localStorage` persistence with live PostgreSQL CRUD API calls.
+- **Frontend Authentication Flow**: Dedicated `/login` and `/register` views styled with the signature futuristic visual identity (glass panels, neon violet/cyan gradients, and eye iconography).
+- **Session Persistence & Global 401 Interception**: Centralized `api.js` client automatically attaches `Authorization: Bearer <token>` and cleanly redirects expired sessions to login.
+- **Navbar Profile & Logout**: Dynamic user initials and display name in top navigation alongside an interactive logout button.
+
+> [!NOTE]
+> **Token Storage Architecture**: In this educational development project, JWT tokens are stored in `localStorage` for simplicity. For production-grade enterprise deployments, `HttpOnly` Secure SameSite cookies are recommended to mitigate cross-site scripting (XSS) risks.
+
+### Authentication API Endpoints
+
+| Method | Endpoint | Access | Description |
+|---|---|---|---|
+| POST | `/api/auth/register` | Public | Create a new user account with hashed password |
+| POST | `/api/auth/login` | Public | Authenticate credentials and receive JWT |
+| GET | `/api/auth/me` | Protected | Fetch current authenticated user profile |
+| POST | `/api/auth/logout` | Public | Acknowledge user logout |
+
+---
+
 ## 7-Day Roadmap
 
 - [x] **Day 1** — Dashboard Foundation *(Completed)*
@@ -150,8 +176,8 @@ src/
 - [x] **Day 3** — Categories + Search + Filter *(Completed)*
 - [x] **Day 4** — Financial Analytics + Charts *(Completed)*
 - [x] **Day 5** — Backend API + PostgreSQL *(Completed)*
-- [ ] **Day 6** — Authentication + Security + Integration
-- [ ] **Day 7** — Testing + Polish + Deployment
+- [x] **Day 6** — Authentication + Security + Integration *(Completed)*
+- [ ] **Day 7** — Testing + Polish + Deployment + Documentation
 
 ---
 

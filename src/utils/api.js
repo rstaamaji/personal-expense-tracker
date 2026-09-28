@@ -66,7 +66,7 @@ async function request(endpoint, options = {}) {
   let response
   try {
     response = await fetch(url, config)
-  } catch (networkError) {
+  } catch {
     throw new Error('Unable to connect to server. Please ensure the backend is running.')
   }
 

@@ -4,7 +4,7 @@
  * Styled with the futuristic financial intelligence theme and eye iconography.
  */
 import React, { useState } from 'react'
-import { useAuth } from '../context/AuthContext'
+import { useAuth } from '../hooks/useAuth'
 import './AuthPage.css'
 
 export default function AuthPage({ initialMode = 'login' }) {
