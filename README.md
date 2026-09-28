@@ -111,13 +111,45 @@ src/
 
 ---
 
+## Day 5 — Backend API + PostgreSQL
+
+### Implemented:
+- **Backend Architecture**: Decoupled Express.js REST API with clean separation of concerns (`controllers/`, `routes/`, `middleware/`, `config/`, `database/`).
+- **PostgreSQL Database**: Configured connection pool using `pg.Pool` with parameterized queries to prevent SQL injection vulnerabilities.
+- **Database Schema**: Reusable DDL script (`server/database/schema.sql`) with `CHECK (type IN ('income', 'expense'))`, `CHECK (amount > 0)`, automatic `updated_at` trigger, and indexed fields.
+- **Data Validation**: Strict server-side validation ensuring valid transaction types, positive numeric amounts, required title/category/date, and length constraints.
+- **Centralized Error Handling**: Security-conscious error middleware that masks internal database errors, connection strings, and stack traces from clients.
+- **CORS Protection**: Restricted CORS configuration permitting requests from client origin (`CLIENT_URL`).
+- **Health Check & Startup Check**: `/api/health` endpoint and automatic database reachability verification on server start.
+
+### API Endpoints
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/health` | API health check |
+| GET | `/api/transactions` | Get transactions (ordered chronologically) |
+| GET | `/api/transactions/:id` | Get transaction by ID |
+| POST | `/api/transactions` | Create transaction |
+| PUT | `/api/transactions/:id` | Update transaction |
+| DELETE | `/api/transactions/:id` | Delete transaction |
+
+### Environment Variables (`server/.env.example`)
+
+| Variable | Description | Default |
+|---|---|---|
+| `DATABASE_URL` | PostgreSQL connection string | `postgresql://postgres:PASSWORD@localhost:5432/expense_tracker` |
+| `PORT` | Backend server port | `5000` |
+| `CLIENT_URL` | Allowed frontend origin for CORS | `http://localhost:5173` |
+
+---
+
 ## 7-Day Roadmap
 
 - [x] **Day 1** — Dashboard Foundation *(Completed)*
 - [x] **Day 2** — Transaction CRUD + LocalStorage *(Completed)*
 - [x] **Day 3** — Categories + Search + Filter *(Completed)*
 - [x] **Day 4** — Financial Analytics + Charts *(Completed)*
-- [ ] **Day 5** — Backend API + PostgreSQL
+- [x] **Day 5** — Backend API + PostgreSQL *(Completed)*
 - [ ] **Day 6** — Authentication + Security + Integration
 - [ ] **Day 7** — Testing + Polish + Deployment
 
@@ -128,27 +160,44 @@ src/
 ### Prerequisites
 - Node.js (v18 or higher recommended; v24 tested)
 - npm (v9 or higher)
+- PostgreSQL (v14 or higher)
 
-### Installation
-Clone the repository and install dependencies:
+### Frontend Setup
+Clone the repository and install frontend dependencies:
 
 ```bash
 git clone <repository-url>
 cd "Personal expense tracker"
 npm install
+npm run dev
 ```
 
-### Development Server
-Run the local development server:
+Frontend runs on [http://localhost:5173](http://localhost:5173).
 
+### Backend Setup
+Install backend dependencies and configure database:
+
+```bash
+cd server
+npm install
+cp .env.example .env
+# Edit .env with your PostgreSQL credentials
+```
+
+Initialize database:
+```bash
+psql -U postgres -d expense_tracker -f database/schema.sql
+```
+
+Run backend server:
 ```bash
 npm run dev
 ```
 
-Open [http://localhost:5173](http://localhost:5173) in your browser to view the dashboard.
+Backend runs on [http://localhost:5000](http://localhost:5000).
 
 ### Build
-Create an optimized production build:
+Create an optimized frontend production build:
 
 ```bash
 npm run build
