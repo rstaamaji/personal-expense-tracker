@@ -411,6 +411,8 @@ export function useTransactions() {
     return Array.from(map.values()).sort((a, b) => a.date.localeCompare(b.date))
   }, [transactions])
 
+  const clearError = () => setError(null)
+
   return {
     transactions: sortedTransactions,
     filteredTransactions,
@@ -425,6 +427,7 @@ export function useTransactions() {
     fetchTransactions,
     loading,
     error,
+    clearError,
     // Filters
     searchQuery,
     setSearchQuery,

@@ -127,11 +127,26 @@ export default function AuthPage({ initialMode = 'login' }) {
 
         {/* Error Alert Banner */}
         {displayedError && (
-          <div className="auth-error-banner" role="alert">
-            <span className="auth-error-icon">⚠️</span>
-            <span>{displayedError}</span>
+          <div className="auth-error-banner" role="alert" aria-live="assertive">
+            <span className="auth-error-icon" aria-hidden="true">⚠️</span>
+            <div className="auth-error-body">
+              <span className="auth-error-label">Authentication Error</span>
+              <span className="auth-error-text">{displayedError}</span>
+            </div>
+            <button
+              type="button"
+              className="auth-error-dismiss"
+              onClick={() => {
+                setLocalError('')
+                if (setAuthError) setAuthError(null)
+              }}
+              aria-label="Dismiss error"
+            >
+              ✕
+            </button>
           </div>
         )}
+
 
         {/* Authentication Form */}
         <form className="auth-form" onSubmit={handleSubmit} noValidate>

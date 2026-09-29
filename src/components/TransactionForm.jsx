@@ -31,6 +31,7 @@ export default function TransactionForm({
   )
   const [date, setDate] = useState(initialData?.date || getTodayDateString())
   const [errors, setErrors] = useState({})
+  const [submitting, setSubmitting] = useState(false)
 
   const titleInputRef = useRef(null)
 
@@ -77,7 +78,7 @@ export default function TransactionForm({
   /**
    * Validate form fields and submit data.
    */
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault()
 
     const newErrors = {}
@@ -109,15 +110,20 @@ export default function TransactionForm({
     }
 
     // Submit validated transaction
-    onSubmit({
-      title: title.trim(),
-      amount: parsedAmount,
-      type,
-      category,
-      date,
-    })
-
-    onClose()
+    setSubmitting(true)
+    try {
+      await onSubmit({
+        title: title.trim(),
+        amount: parsedAmount,
+        type,
+        category,
+        date,
+      })
+      onClose()
+    } catch {
+      // Errors are handled and toasted in Dashboard; keep modal open
+      setSubmitting(false)
+    }
   }
 
   return (
@@ -286,14 +292,21 @@ export default function TransactionForm({
               type="button"
               className="btn-secondary"
               onClick={onClose}
+              disabled={submitting}
             >
               Cancel
             </button>
             <button
               type="submit"
               className="btn-primary"
+              disabled={submitting}
             >
-              {isEditMode ? 'Save Changes' : 'Add Transaction'}
+              {submitting ? (
+                <span className="form-submit-spinner-wrap">
+                  <span className="form-submit-spinner" />
+                  <span>Saving…</span>
+                </span>
+              ) : isEditMode ? 'Save Changes' : 'Add Transaction'}
             </button>
           </div>
         </form>

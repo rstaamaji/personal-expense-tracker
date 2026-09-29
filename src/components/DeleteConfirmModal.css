@@ -115,7 +115,36 @@
   letter-spacing: 0.02em;
 }
 
-.btn-danger:hover {
+.btn-danger:hover:not(:disabled) {
   box-shadow: 0 0 28px rgba(244, 63, 94, 0.5);
   transform: translateY(-1px);
+}
+
+.btn-danger:disabled,
+.btn-secondary:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* Delete-in-progress spinner */
+.delete-btn-spinner-wrap {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.delete-btn-spinner {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top-color: #ffffff;
+  border-radius: 50%;
+  animation: delBtnSpin 650ms linear infinite;
+  flex-shrink: 0;
+}
+
+@keyframes delBtnSpin {
+  to { transform: rotate(360deg); }
 }

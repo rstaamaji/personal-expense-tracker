@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useCallback } from 'react'
 import StatCard from '../components/StatCard'
 import AnalyticsSection from '../components/AnalyticsSection'
 import AnimatedEye from '../components/AnimatedEye'
@@ -6,6 +6,9 @@ import TransactionFilters from '../components/TransactionFilters'
 import TransactionItem from '../components/TransactionItem'
 import TransactionForm from '../components/TransactionForm'
 import DeleteConfirmModal from '../components/DeleteConfirmModal'
+import SkeletonLoader, { SkeletonStatCard, SkeletonChartCard } from '../components/SkeletonLoader'
+import ApiErrorBanner from '../components/ApiErrorBanner'
+import Toast from '../components/Toast'
 import { useTransactions } from '../hooks/useTransactions'
 import { useAuth } from '../hooks/useAuth'
 import { formatRupiah } from '../utils/formatters'
@@ -24,8 +27,10 @@ export default function Dashboard() {
     addTransaction,
     updateTransaction,
     deleteTransaction,
+    fetchTransactions,
     loading,
     error,
+    clearError,
     // Filters (Day 3)
     searchQuery,
     setSearchQuery,
@@ -43,6 +48,18 @@ export default function Dashboard() {
   const [isFormOpen, setIsFormOpen] = useState(false)
   const [editingTransaction, setEditingTransaction] = useState(null)
   const [deletingTransaction, setDeletingTransaction] = useState(null)
+  const [deleteConfirming, setDeleteConfirming] = useState(false)
+
+  // Toast state
+  const [toast, setToast] = useState({ message: '', type: 'success' })
+
+  const showToast = useCallback((message, type = 'success') => {
+    setToast({ message, type })
+  }, [])
+
+  const dismissToast = useCallback(() => {
+    setToast({ message: '', type: 'success' })
+  }, [])
 
   // Open modal in Add mode
   const handleOpenAdd = () => {
@@ -57,11 +74,17 @@ export default function Dashboard() {
   }
 
   // Handle form submission (Add or Edit)
-  const handleFormSubmit = (data) => {
-    if (editingTransaction) {
-      updateTransaction(editingTransaction.id, data)
-    } else {
-      addTransaction(data)
+  const handleFormSubmit = async (data) => {
+    try {
+      if (editingTransaction) {
+        await updateTransaction(editingTransaction.id, data)
+        showToast(`"${data.title}" updated successfully.`, 'success')
+      } else {
+        await addTransaction(data)
+        showToast(`"${data.title}" added successfully.`, 'success')
+      }
+    } catch {
+      showToast('Failed to save transaction. Please try again.', 'error')
     }
   }
 
@@ -71,10 +94,18 @@ export default function Dashboard() {
   }
 
   // Confirm delete
-  const handleConfirmDelete = () => {
-    if (deletingTransaction) {
-      deleteTransaction(deletingTransaction.id)
+  const handleConfirmDelete = async () => {
+    if (!deletingTransaction) return
+    const titleCopy = deletingTransaction.title
+    setDeleteConfirming(true)
+    try {
+      await deleteTransaction(deletingTransaction.id)
       setDeletingTransaction(null)
+      showToast(`"${titleCopy}" deleted.`, 'success')
+    } catch {
+      showToast('Failed to delete transaction. Please try again.', 'error')
+    } finally {
+      setDeleteConfirming(false)
     }
   }
 
@@ -89,8 +120,19 @@ export default function Dashboard() {
       ? Math.round((stats.totalExpense / stats.totalIncome) * 100)
       : 0
 
+  const hasData = transactions.length > 0
+
   return (
     <div className="dashboard">
+      {/* ================================================
+          Toast Notification
+          ================================================ */}
+      <Toast
+        message={toast.message}
+        type={toast.type}
+        onClose={dismissToast}
+      />
+
       {/* ==================================================
           Header Section
           ================================================== */}
@@ -118,7 +160,7 @@ export default function Dashboard() {
               <line x1="8" y1="2" x2="8" y2="6" />
               <line x1="3" y1="10" x2="21" y2="10" />
             </svg>
-            <span>September 28, 2026</span>
+            <span>{new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</span>
           </div>
 
           <button
@@ -136,41 +178,52 @@ export default function Dashboard() {
           Summary Cards (Live Dynamic Statistics)
           ================================================== */}
       <section className="summary-grid" aria-label="Financial Summary Cards">
-        <StatCard
-          label="Total Balance"
-          value={formatRupiah(stats.totalBalance)}
-          subtext={stats.totalBalance >= 0 ? 'Net positive savings' : 'Expenses exceed income'}
-          type="balance"
-          badgeText={stats.totalBalance >= 0 ? 'Healthy' : 'Deficit'}
-          badgeTrend={stats.totalBalance >= 0 ? 'up' : 'down'}
-        />
+        {loading ? (
+          <>
+            <SkeletonStatCard />
+            <SkeletonStatCard />
+            <SkeletonStatCard />
+            <SkeletonStatCard />
+          </>
+        ) : (
+          <>
+            <StatCard
+              label="Total Balance"
+              value={formatRupiah(stats.totalBalance)}
+              subtext={stats.totalBalance >= 0 ? 'Net positive savings' : 'Expenses exceed income'}
+              type="balance"
+              badgeText={stats.totalBalance >= 0 ? 'Healthy' : 'Deficit'}
+              badgeTrend={stats.totalBalance >= 0 ? 'up' : 'down'}
+            />
 
-        <StatCard
-          label="Total Income"
-          value={formatRupiah(stats.totalIncome)}
-          subtext="Total earned funds"
-          type="income"
-          badgeText="Active"
-          badgeTrend="up"
-        />
+            <StatCard
+              label="Total Income"
+              value={formatRupiah(stats.totalIncome)}
+              subtext="Total earned funds"
+              type="income"
+              badgeText="Active"
+              badgeTrend="up"
+            />
 
-        <StatCard
-          label="Total Expense"
-          value={formatRupiah(stats.totalExpense)}
-          subtext={`${expenseRatio}% of income spent`}
-          type="expense"
-          badgeText="Spent"
-          badgeTrend="down"
-        />
+            <StatCard
+              label="Total Expense"
+              value={formatRupiah(stats.totalExpense)}
+              subtext={`${expenseRatio}% of income spent`}
+              type="expense"
+              badgeText="Spent"
+              badgeTrend="down"
+            />
 
-        <StatCard
-          label="Transactions"
-          value={String(stats.transactionCount)}
-          subtext="Stored in PostgreSQL"
-          type="transactions"
-          badgeText={`${stats.transactionCount} total`}
-          badgeTrend="neutral"
-        />
+            <StatCard
+              label="Transactions"
+              value={String(stats.transactionCount)}
+              subtext="Stored in PostgreSQL"
+              type="transactions"
+              badgeText={`${stats.transactionCount} total`}
+              badgeTrend="neutral"
+            />
+          </>
+        )}
       </section>
 
       {/* ==================================================
@@ -184,18 +237,45 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* Animated Eye Hero */}
-        <div className="analytics-eye-hero">
-          <AnimatedEye stats={stats} />
-        </div>
+        {loading ? (
+          /* Analytics loading skeleton */
+          <div className="analytics-skeleton-grid">
+            <SkeletonChartCard />
+            <SkeletonChartCard />
+          </div>
+        ) : !hasData ? (
+          /* Analytics empty state — no transactions at all */
+          <div className="analytics-empty-hero">
+            <div className="analytics-empty-hero-icon" aria-hidden="true">📊</div>
+            <h3 className="analytics-empty-hero-title">No data to analyse yet</h3>
+            <p className="analytics-empty-hero-desc">
+              Add your first income or expense transaction to start seeing charts, trends, and category breakdowns here.
+            </p>
+            <button
+              type="button"
+              className="btn-primary"
+              onClick={handleOpenAdd}
+            >
+              + Add First Transaction
+            </button>
+          </div>
+        ) : (
+          /* Full analytics — Eye hero + charts */
+          <>
+            {/* Animated Eye Hero */}
+            <div className="analytics-eye-hero">
+              <AnimatedEye stats={stats} />
+            </div>
 
-        <AnalyticsSection
-          stats={stats}
-          expenseByCategory={expenseByCategory}
-          incomeByCategory={incomeByCategory}
-          incomeVsExpenseData={incomeVsExpenseData}
-          spendingTrendData={spendingTrendData}
-        />
+            <AnalyticsSection
+              stats={stats}
+              expenseByCategory={expenseByCategory}
+              incomeByCategory={incomeByCategory}
+              incomeVsExpenseData={incomeVsExpenseData}
+              spendingTrendData={spendingTrendData}
+            />
+          </>
+        )}
       </div>
 
       {/* ==================================================
@@ -221,21 +301,14 @@ export default function Dashboard() {
         </div>
 
         <section className="dashboard-card" style={{ gap: '1rem', marginTop: '1rem' }} aria-label="Transaction records and search">
+          {/* API Error Banner */}
           {error && (
-            <div style={{
-              margin: '1rem 1.25rem 0',
-              padding: '0.65rem 0.875rem',
-              borderRadius: 'var(--radius-md)',
-              background: 'rgba(244, 63, 94, 0.12)',
-              border: '1px solid rgba(244, 63, 94, 0.3)',
-              color: 'var(--expense)',
-              fontSize: '0.8rem',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0.5rem',
-            }}>
-              <span>⚠️</span>
-              <span>{error}</span>
+            <div style={{ padding: '1rem 1.25rem 0' }}>
+              <ApiErrorBanner
+                error={error}
+                onRetry={fetchTransactions}
+                onDismiss={clearError}
+              />
             </div>
           )}
 
@@ -255,19 +328,13 @@ export default function Dashboard() {
             hasActiveFilters={hasActiveFilters}
           />
 
-          {loading && transactions.length === 0 ? (
-            <div className="transactions-empty-state">
-              <div className="auth-spinner" style={{ width: 28, height: 28, borderWidth: 3, borderTopColor: 'var(--cyan)' }} />
-              <p className="empty-state-desc" style={{ marginTop: '0.5rem' }}>
-                Loading transactions from database...
-              </p>
-            </div>
+          {loading ? (
+            /* Loading skeleton */
+            <SkeletonLoader rows={5} />
           ) : transactions.length === 0 ? (
             /* State 1: No transactions in storage */
             <div className="transactions-empty-state">
-              <div className="empty-state-icon" aria-hidden="true">
-                🧾
-              </div>
+              <div className="empty-state-icon" aria-hidden="true">🧾</div>
               <h3 className="empty-state-title">No transactions yet.</h3>
               <p className="empty-state-desc">
                 Add your first transaction to start tracking your finances.
@@ -283,9 +350,7 @@ export default function Dashboard() {
           ) : filteredTransactions.length === 0 ? (
             /* State 2 & 3: Filter or Search yielded 0 results */
             <div className="transactions-empty-state">
-              <div className="empty-state-icon" aria-hidden="true">
-                🔍
-              </div>
+              <div className="empty-state-icon" aria-hidden="true">🔍</div>
               <h3 className="empty-state-title">
                 {searchQuery.trim().length > 0
                   ? 'No transactions match your search.'
@@ -350,6 +415,7 @@ export default function Dashboard() {
         transactionTitle={deletingTransaction?.title || ''}
         onCancel={handleCancelDelete}
         onConfirm={handleConfirmDelete}
+        confirming={deleteConfirming}
       />
     </div>
   )

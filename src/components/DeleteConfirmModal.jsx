@@ -2,39 +2,41 @@ import React, { useEffect } from 'react'
 import './DeleteConfirmModal.css'
 
 /**
- * Confirmation dialog for deleting a transaction without browser alert().
+ * Confirmation dialog for deleting a transaction without browser alert()
  *
  * @param {object} props
  * @param {boolean} props.isOpen
  * @param {string} props.transactionTitle
  * @param {() => void} props.onCancel
  * @param {() => void} props.onConfirm
+ * @param {boolean} [props.confirming] - Whether delete is in-flight
  */
 export default function DeleteConfirmModal({
   isOpen,
   transactionTitle,
   onCancel,
   onConfirm,
+  confirming = false,
 }) {
   useEffect(() => {
     if (!isOpen) return
 
     function handleKeyDown(e) {
-      if (e.key === 'Escape') {
+      if (e.key === 'Escape' && !confirming) {
         onCancel()
       }
     }
 
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [isOpen, onCancel])
+  }, [isOpen, onCancel, confirming])
 
   if (!isOpen) return null
 
   return (
     <div
       className="delete-modal-overlay"
-      onClick={onCancel}
+      onClick={confirming ? undefined : onCancel}
       role="dialog"
       aria-modal="true"
       aria-labelledby="delete-dialog-title"
@@ -66,6 +68,7 @@ export default function DeleteConfirmModal({
             type="button"
             className="btn-secondary"
             onClick={onCancel}
+            disabled={confirming}
           >
             Cancel
           </button>
@@ -73,8 +76,16 @@ export default function DeleteConfirmModal({
             type="button"
             className="btn-danger"
             onClick={onConfirm}
+            disabled={confirming}
           >
-            Delete
+            {confirming ? (
+              <span className="delete-btn-spinner-wrap">
+                <span className="delete-btn-spinner" />
+                <span>Deleting…</span>
+              </span>
+            ) : (
+              'Delete'
+            )}
           </button>
         </div>
       </div>

@@ -122,27 +122,74 @@
 /* Error Banner */
 .auth-error-banner {
   display: flex;
-  align-items: center;
-  gap: 0.6rem;
-  padding: 0.65rem 0.875rem;
-  background: rgba(244, 63, 94, 0.12);
+  align-items: flex-start;
+  gap: 0.65rem;
+  padding: 0.75rem 0.875rem;
+  background: rgba(244, 63, 94, 0.1);
   border: 1px solid rgba(244, 63, 94, 0.35);
   border-radius: var(--radius-md);
-  color: var(--expense);
-  font-size: 0.8rem;
   margin-bottom: 1.25rem;
-  animation: bannerShake 250ms ease;
+  animation: bannerShake 280ms ease;
 }
 
 @keyframes bannerShake {
   0%, 100% { transform: translateX(0); }
-  25% { transform: translateX(-4px); }
-  75% { transform: translateX(4px); }
+  20% { transform: translateX(-5px); }
+  60% { transform: translateX(5px); }
+  80% { transform: translateX(-3px); }
 }
 
 .auth-error-icon {
   font-size: 1rem;
   flex-shrink: 0;
+  margin-top: 0.05rem;
+  line-height: 1;
+}
+
+.auth-error-body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.auth-error-label {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--expense);
+  letter-spacing: 0.03em;
+  line-height: 1.3;
+}
+
+.auth-error-text {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  line-height: 1.4;
+  word-break: break-word;
+}
+
+.auth-error-dismiss {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border-radius: var(--radius-sm);
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: var(--text-subtle);
+  font-size: 0.65rem;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: all var(--transition-fast);
+  margin-top: 0.05rem;
+}
+
+.auth-error-dismiss:hover {
+  background: rgba(244, 63, 94, 0.2);
+  color: var(--expense);
+  border-color: rgba(244, 63, 94, 0.4);
 }
 
 /* Form */
