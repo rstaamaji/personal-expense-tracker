@@ -2,7 +2,8 @@
  * app.js
  * Main entry point for Personal Expense Tracker Backend API (Day 5).
  */
-require('dotenv').config()
+const path = require('path')
+require('dotenv').config({ path: path.resolve(__dirname, '../.env') })
 const express = require('express')
 const cors = require('cors')
 const { testConnection } = require('./config/database')

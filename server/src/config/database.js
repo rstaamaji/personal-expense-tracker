@@ -3,6 +3,8 @@
  * PostgreSQL connection pool using environment variables.
  * Never expose credentials — all values come from .env
  */
+const path = require('path')
+require('dotenv').config({ path: path.resolve(__dirname, '../../.env') })
 const { Pool } = require('pg')
 
 // Use DATABASE_URL if provided, otherwise fall back to individual vars
