@@ -3,6 +3,73 @@ import { EXPENSE_CATEGORIES, INCOME_CATEGORIES } from '../utils/constants'
 import { getTodayDateString } from '../utils/formatters'
 import './TransactionForm.css'
 
+/* ------------------------------------------------------------------ */
+/*  Pure validation logic (no side-effects)                            */
+/* ------------------------------------------------------------------ */
+
+const MAX_TITLE_LENGTH = 100
+const MAX_AMOUNT = 1_000_000_000 // 1 billion Rp
+const MIN_DATE = '2000-01-01'
+const VALID_TYPES = ['income', 'expense']
+
+function validateTitle(value) {
+  const v = (value || '').trim()
+  if (!v) return 'Transaction name is required.'
+  if (v.length < 2) return 'Name must be at least 2 characters.'
+  if (v.length > MAX_TITLE_LENGTH) return `Name must not exceed ${MAX_TITLE_LENGTH} characters.`
+  return null
+}
+
+function validateAmount(value) {
+  if (value === '' || value === null || value === undefined) return 'Amount is required.'
+  const n = Number(value)
+  if (isNaN(n)) return 'Amount must be a number.'
+  if (n <= 0) return 'Amount must be greater than Rp 0.'
+  if (!Number.isFinite(n)) return 'Amount is too large.'
+  if (n > MAX_AMOUNT) return `Amount cannot exceed Rp ${MAX_AMOUNT.toLocaleString('id-ID')}.`
+  if (Math.floor(n) !== n && String(value).split('.')[1]?.length > 2)
+    return 'Amount may have at most 2 decimal places.'
+  return null
+}
+
+function validateDate(value) {
+  if (!value) return 'Date is required.'
+  if (value < MIN_DATE) return `Date cannot be before ${MIN_DATE}.`
+  const today = getTodayDateString()
+  if (value > today) return 'Date cannot be in the future.'
+  return null
+}
+
+function validateType(value) {
+  if (!VALID_TYPES.includes(value)) return 'Please select a valid transaction type.'
+  return null
+}
+
+function validateCategory(value, type) {
+  if (!value) return 'Please select a category.'
+  const valid = type === 'income' ? INCOME_CATEGORIES : EXPENSE_CATEGORIES
+  if (!valid.includes(value)) return 'Selected category is not valid for this transaction type.'
+  return null
+}
+
+function validateAll({ title, amount, type, category, date }) {
+  return {
+    title: validateTitle(title),
+    amount: validateAmount(amount),
+    type: validateType(type),
+    category: validateCategory(category, type),
+    date: validateDate(date),
+  }
+}
+
+function hasErrors(errs) {
+  return Object.values(errs).some(Boolean)
+}
+
+/* ------------------------------------------------------------------ */
+/*  Component                                                           */
+/* ------------------------------------------------------------------ */
+
 /**
  * TransactionForm modal component for creating and editing transactions.
  *
@@ -31,6 +98,8 @@ export default function TransactionForm({
   )
   const [date, setDate] = useState(initialData?.date || getTodayDateString())
   const [errors, setErrors] = useState({})
+  // Track which fields have been touched so we only show errors after the user interacts
+  const [touched, setTouched] = useState({})
   const [submitting, setSubmitting] = useState(false)
 
   const titleInputRef = useRef(null)
@@ -40,76 +109,67 @@ export default function TransactionForm({
     titleInputRef.current?.focus()
   }, [])
 
-  // Close on Escape key press
+  // Close on Escape key press (only when not submitting)
   useEffect(() => {
     if (!isOpen) return
-
     function handleKeyDown(e) {
-      if (e.key === 'Escape') {
-        onClose()
-      }
+      if (e.key === 'Escape' && !submitting) onClose()
     }
-
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [isOpen, onClose])
+  }, [isOpen, onClose, submitting])
 
   if (!isOpen) return null
 
-  // Available categories based on selected transaction type
   const availableCategories = type === 'income' ? INCOME_CATEGORIES : EXPENSE_CATEGORIES
 
-  /**
-   * Handle switching between Expense and Income.
-   * Automatically updates category if current one is not valid for the new type.
-   */
+  /* ---- Field change helpers ---- */
+  const touch = (field) => setTouched((prev) => ({ ...prev, [field]: true }))
+
+  const handleTitleChange = (v) => {
+    setTitle(v)
+    if (touched.title) setErrors((prev) => ({ ...prev, title: validateTitle(v) }))
+  }
+
+  const handleAmountChange = (v) => {
+    setAmount(v)
+    if (touched.amount) setErrors((prev) => ({ ...prev, amount: validateAmount(v) }))
+  }
+
+  const handleDateChange = (v) => {
+    setDate(v)
+    if (touched.date) setErrors((prev) => ({ ...prev, date: validateDate(v) }))
+  }
+
   const handleTypeChange = (newType) => {
     setType(newType)
     const validList = newType === 'income' ? INCOME_CATEGORIES : EXPENSE_CATEGORIES
-    if (!validList.includes(category)) {
-      setCategory(validList[0])
-    }
-    // Clear type error if any
-    if (errors.type) {
-      setErrors((prev) => ({ ...prev, type: null }))
-    }
+    const newCategory = validList.includes(category) ? category : validList[0]
+    setCategory(newCategory)
+    setErrors((prev) => ({
+      ...prev,
+      type: validateType(newType),
+      category: validateCategory(newCategory, newType),
+    }))
   }
 
-  /**
-   * Validate form fields and submit data.
-   */
+  const handleCategoryChange = (v) => {
+    setCategory(v)
+    if (touched.category) setErrors((prev) => ({ ...prev, category: validateCategory(v, type) }))
+  }
+
+  /* ---- Submit ---- */
   const handleSubmit = async (e) => {
     e.preventDefault()
 
-    const newErrors = {}
+    // Touch all fields to reveal any hidden errors
+    setTouched({ title: true, amount: true, type: true, category: true, date: true })
 
-    if (!title || !title.trim()) {
-      newErrors.title = 'Transaction name is required'
-    }
+    const newErrors = validateAll({ title, amount, type, category, date })
+    setErrors(newErrors)
+    if (hasErrors(newErrors)) return
 
     const parsedAmount = Number(amount)
-    if (!amount || isNaN(parsedAmount) || parsedAmount <= 0) {
-      newErrors.amount = 'Amount must be greater than 0'
-    }
-
-    if (!type) {
-      newErrors.type = 'Please select transaction type'
-    }
-
-    if (!category) {
-      newErrors.category = 'Please select a category'
-    }
-
-    if (!date) {
-      newErrors.date = 'Date is required'
-    }
-
-    if (Object.keys(newErrors).length > 0) {
-      setErrors(newErrors)
-      return
-    }
-
-    // Submit validated transaction
     setSubmitting(true)
     try {
       await onSubmit({
@@ -121,15 +181,17 @@ export default function TransactionForm({
       })
       onClose()
     } catch {
-      // Errors are handled and toasted in Dashboard; keep modal open
       setSubmitting(false)
     }
   }
 
+  /* ---- Helpers ---- */
+  const fieldError = (field) => touched[field] && errors[field]
+
   return (
     <div
       className="modal-overlay"
-      onClick={onClose}
+      onClick={submitting ? undefined : onClose}
       role="dialog"
       aria-modal="true"
       aria-labelledby="modal-title"
@@ -155,6 +217,7 @@ export default function TransactionForm({
             className="modal-close-btn"
             onClick={onClose}
             aria-label="Close dialog"
+            disabled={submitting}
           >
             ✕
           </button>
@@ -163,17 +226,23 @@ export default function TransactionForm({
         {/* Modal Body Form */}
         <form onSubmit={handleSubmit} noValidate>
           <div className="modal-body">
-            {/* Type Segmented Control */}
+
+            {/* Transaction Type */}
             <div className="form-group">
               <label className="form-label">
                 <span>Transaction Type</span>
                 <span className="required-star">*</span>
               </label>
-              <div className="type-segmented-control" role="group" aria-label="Transaction Type">
+              <div
+                className={`type-segmented-control ${fieldError('type') ? 'is-invalid-group' : ''}`}
+                role="group"
+                aria-label="Transaction Type"
+              >
                 <button
                   type="button"
                   className={`segmented-btn ${type === 'expense' ? 'active expense' : ''}`}
                   onClick={() => handleTypeChange('expense')}
+                  disabled={submitting}
                 >
                   <span aria-hidden="true">↓</span>
                   <span>Expense</span>
@@ -182,11 +251,15 @@ export default function TransactionForm({
                   type="button"
                   className={`segmented-btn ${type === 'income' ? 'active income' : ''}`}
                   onClick={() => handleTypeChange('income')}
+                  disabled={submitting}
                 >
                   <span aria-hidden="true">↑</span>
                   <span>Income</span>
                 </button>
               </div>
+              {fieldError('type') && (
+                <span className="form-error-msg" role="alert">{errors.type}</span>
+              )}
             </div>
 
             {/* Transaction Title */}
@@ -199,19 +272,32 @@ export default function TransactionForm({
                 id="tx-title"
                 ref={titleInputRef}
                 type="text"
-                className={`form-input ${errors.title ? 'is-invalid' : ''}`}
+                className={`form-input ${fieldError('title') ? 'is-invalid' : ''}`}
                 placeholder="e.g. Makan Siang, Salary, Freelance"
                 value={title}
-                onChange={(e) => {
-                  setTitle(e.target.value)
-                  if (errors.title) setErrors((prev) => ({ ...prev, title: null }))
+                maxLength={MAX_TITLE_LENGTH}
+                disabled={submitting}
+                onChange={(e) => handleTitleChange(e.target.value)}
+                onBlur={() => {
+                  touch('title')
+                  setErrors((prev) => ({ ...prev, title: validateTitle(title) }))
                 }}
-                required
+                aria-describedby={fieldError('title') ? 'tx-title-error' : undefined}
+                aria-invalid={Boolean(fieldError('title'))}
               />
-              {errors.title && <span className="form-error-msg">{errors.title}</span>}
+              <div className="form-field-footer">
+                {fieldError('title') ? (
+                  <span id="tx-title-error" className="form-error-msg" role="alert">{errors.title}</span>
+                ) : (
+                  <span />
+                )}
+                <span className={`form-char-count ${title.length > MAX_TITLE_LENGTH * 0.85 ? 'warn' : ''}`}>
+                  {title.length}/{MAX_TITLE_LENGTH}
+                </span>
+              </div>
             </div>
 
-            {/* Amount & Date in Two-Column Row */}
+            {/* Amount & Date */}
             <div className="form-row-two-col">
               {/* Amount */}
               <div className="form-group">
@@ -225,18 +311,24 @@ export default function TransactionForm({
                     id="tx-amount"
                     type="number"
                     min="1"
-                    step="any"
-                    className={`form-input has-prefix ${errors.amount ? 'is-invalid' : ''}`}
+                    max={MAX_AMOUNT}
+                    step="1"
+                    className={`form-input has-prefix ${fieldError('amount') ? 'is-invalid' : ''}`}
                     placeholder="25000"
                     value={amount}
-                    onChange={(e) => {
-                      setAmount(e.target.value)
-                      if (errors.amount) setErrors((prev) => ({ ...prev, amount: null }))
+                    disabled={submitting}
+                    onChange={(e) => handleAmountChange(e.target.value)}
+                    onBlur={() => {
+                      touch('amount')
+                      setErrors((prev) => ({ ...prev, amount: validateAmount(amount) }))
                     }}
-                    required
+                    aria-describedby={fieldError('amount') ? 'tx-amount-error' : undefined}
+                    aria-invalid={Boolean(fieldError('amount'))}
                   />
                 </div>
-                {errors.amount && <span className="form-error-msg">{errors.amount}</span>}
+                {fieldError('amount') && (
+                  <span id="tx-amount-error" className="form-error-msg" role="alert">{errors.amount}</span>
+                )}
               </div>
 
               {/* Date */}
@@ -248,19 +340,26 @@ export default function TransactionForm({
                 <input
                   id="tx-date"
                   type="date"
-                  className={`form-input ${errors.date ? 'is-invalid' : ''}`}
+                  min={MIN_DATE}
+                  max={getTodayDateString()}
+                  className={`form-input ${fieldError('date') ? 'is-invalid' : ''}`}
                   value={date}
-                  onChange={(e) => {
-                    setDate(e.target.value)
-                    if (errors.date) setErrors((prev) => ({ ...prev, date: null }))
+                  disabled={submitting}
+                  onChange={(e) => handleDateChange(e.target.value)}
+                  onBlur={() => {
+                    touch('date')
+                    setErrors((prev) => ({ ...prev, date: validateDate(date) }))
                   }}
-                  required
+                  aria-describedby={fieldError('date') ? 'tx-date-error' : undefined}
+                  aria-invalid={Boolean(fieldError('date'))}
                 />
-                {errors.date && <span className="form-error-msg">{errors.date}</span>}
+                {fieldError('date') && (
+                  <span id="tx-date-error" className="form-error-msg" role="alert">{errors.date}</span>
+                )}
               </div>
             </div>
 
-            {/* Category Dropdown */}
+            {/* Category */}
             <div className="form-group">
               <label htmlFor="tx-category" className="form-label">
                 <span>Category</span>
@@ -268,22 +367,29 @@ export default function TransactionForm({
               </label>
               <select
                 id="tx-category"
-                className={`form-select ${errors.category ? 'is-invalid' : ''}`}
+                className={`form-select ${fieldError('category') ? 'is-invalid' : ''}`}
                 value={category}
+                disabled={submitting}
                 onChange={(e) => {
-                  setCategory(e.target.value)
-                  if (errors.category) setErrors((prev) => ({ ...prev, category: null }))
+                  touch('category')
+                  handleCategoryChange(e.target.value)
                 }}
-                required
+                onBlur={() => {
+                  touch('category')
+                  setErrors((prev) => ({ ...prev, category: validateCategory(category, type) }))
+                }}
+                aria-describedby={fieldError('category') ? 'tx-category-error' : undefined}
+                aria-invalid={Boolean(fieldError('category'))}
               >
                 {availableCategories.map((cat) => (
-                  <option key={cat} value={cat}>
-                    {cat}
-                  </option>
+                  <option key={cat} value={cat}>{cat}</option>
                 ))}
               </select>
-              {errors.category && <span className="form-error-msg">{errors.category}</span>}
+              {fieldError('category') && (
+                <span id="tx-category-error" className="form-error-msg" role="alert">{errors.category}</span>
+              )}
             </div>
+
           </div>
 
           {/* Modal Footer */}

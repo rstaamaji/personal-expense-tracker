@@ -172,6 +172,28 @@
   font-weight: 500;
 }
 
+.form-field-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.form-char-count {
+  font-size: 0.7rem;
+  color: var(--text-subtle);
+  margin-left: auto;
+}
+
+.form-char-count.warn {
+  color: var(--expense);
+}
+
+.type-segmented-control.is-invalid-group {
+  border-color: var(--expense);
+  box-shadow: 0 0 0 2px rgba(244, 63, 94, 0.15);
+}
+
 /* ---- Input with Prefix ---- */
 .form-input-wrapper {
   position: relative;

@@ -246,6 +246,84 @@
   cursor: not-allowed;
 }
 
+.auth-input.is-invalid {
+  border-color: var(--expense);
+  box-shadow: 0 0 0 3px rgba(244, 63, 94, 0.16);
+  background: rgba(244, 63, 94, 0.04);
+}
+
+.auth-field-error {
+  font-size: 0.73rem;
+  color: var(--expense);
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  line-height: 1.35;
+  animation: fieldErrFadeIn 180ms ease;
+}
+
+@keyframes fieldErrFadeIn {
+  from { opacity: 0; transform: translateY(-3px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.auth-password-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 100%;
+}
+
+.auth-input.has-toggle {
+  padding-right: 2.75rem;
+}
+
+.auth-pwd-toggle-btn {
+  position: absolute;
+  right: 0.65rem;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  border: none;
+  font-size: 0.9rem;
+  color: var(--text-subtle);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.auth-pwd-toggle-btn:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--text-main);
+}
+
+.auth-duplicate-switch-btn {
+  display: inline-flex;
+  align-items: center;
+  margin-top: 0.4rem;
+  padding: 0.35rem 0.75rem;
+  background: rgba(34, 211, 238, 0.12);
+  border: 1px solid rgba(34, 211, 238, 0.35);
+  border-radius: var(--radius-sm);
+  color: var(--cyan);
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  width: fit-content;
+}
+
+.auth-duplicate-switch-btn:hover {
+  background: rgba(34, 211, 238, 0.22);
+  border-color: rgba(34, 211, 238, 0.55);
+}
+
 /* Submit Button */
 .auth-submit-btn {
   margin-top: 0.5rem;
