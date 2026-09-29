@@ -1,237 +1,330 @@
 # Personal Expense Tracker
 
-A modern personal finance dashboard for tracking income, expenses, transactions, and financial insights.
+A full-stack personal finance and expense management dashboard designed to track income, expenses, transactions, and real-time financial intelligence.
 
 Built by **Rustam Aji** as part of the **Aji 50 Days GitHub Challenge**.
 
 ---
 
-## Project Status
+## Table of Contents
 
-**Day 4 Completed (Accelerated Development: Day 3 + Day 4)**
-
-The application now features comprehensive **Transaction Categories, Search & Combined Filtering** (Day 3) and full **Financial Analytics & Interactive Charts** (Day 4) using Recharts and live client-side data.
-
----
-
-## Day 3 — Categories, Search & Filtering
-
-### Implemented:
-- **Static transaction categories**: Predefined expense categories (Food, Transportation, Education, Shopping, Bills, Entertainment, Health, Other) and income categories (Salary, Freelance, Business, Other).
-- **Search transactions**: Real-time, case-insensitive keyword search by transaction title.
-- **Income/expense filtering**: Segmented toggle to view All Types, Income only, or Expense only.
-- **Category filtering**: Dynamic category dropdown that auto-adapts according to the selected transaction type.
-- **Date filtering**: Quick timeframe selector for All Time, This Month, and This Week (Last 7 Days).
-- **Combined filters**: Search, type, category, and date filters all work cooperatively.
-- **Clear filters**: Dedicated reset button and removable filter chips to revert back to all transactions.
-- **Improved empty states**: Tailored empty states for:
-  - *No transactions in storage* ("No transactions yet.")
-  - *No search matches* ("No transactions match your search.")
-  - *No filter matches* ("No transactions match the selected filters.")
+- [Project Overview](#project-overview)
+- [Features](#features)
+- [Tech Stack](#tech-stack)
+- [System Architecture](#system-architecture)
+- [Database Structure](#database-structure)
+- [Environment Variables](#environment-variables)
+- [Installation & Setup](#installation--setup)
+  - [PostgreSQL Setup](#1-postgresql-setup)
+  - [Backend Setup](#2-backend-setup)
+  - [Frontend Setup](#3-frontend-setup)
+- [How to Run Locally](#how-to-run-locally)
+- [Authentication Flow](#authentication-flow)
+- [API Overview](#api-overview)
+- [Testing Instructions](#testing-instructions)
+- [Security Notes](#security-notes)
+- [Project Roadmap](#project-roadmap)
+- [What I Learned](#what-i-learned)
 
 ---
 
-## Day 4 — Financial Analytics & Charts
+## Project Overview
 
-### Implemented:
-- **Income analytics**: Total earnings and count of income streams.
-- **Expense analytics**: Total expenditures and count of expense payments.
-- **Average expense**: Automatically calculated per expense transaction (`Total Expense / Expense Count`).
-- **Largest transaction analysis**: Real-time identification of Largest Expense and Largest Income.
-- **Savings rate**: Calculated as `((Income - Expense) / Income) * 100` with safe handling for zero income.
-- **Category spending analysis**: Granular breakdown of expense categories with amount, transaction count, percentage allocation, and progress bars.
-- **Income category analysis**: Breakdown of revenue sources with visual allocation indicators.
-- **Income vs Expense Chart**: Recharts comparative bar chart grouped chronologically by month with Rupiah tooltips.
-- **Spending Trend Chart**: Recharts smooth area timeline showing daily expense movements.
-- **Category Donut Charts**: Recharts donut charts showcasing expense and income distributions.
+Personal Expense Tracker provides individuals with a transparent, responsive platform to manage personal finances. It combines a client-side React single-page application with a Node.js/Express.js REST API backed by PostgreSQL. The interface delivers instant feedback via skeleton loaders, toast notifications, dynamic chart models, and strict tenant isolation.
 
 ---
 
-## Privacy & Storage Considerations
+## Features
 
-- All transaction data is stored locally in the browser (`localStorage`) under the key `expense_tracker_transactions`.
-- Data is **never** sent to an external server, API, GitHub, or third-party database.
-- LocalStorage is intended for this frontend prototype and should **not** be considered secure storage for sensitive credentials.
-- The repository contains only demo transactions.
+- **User Authentication**: Secure registration and login with bcrypt password hashing and 7-day stateless JWT tokens.
+- **Transaction CRUD**: Full creation, editing, deletion, and chronological viewing of financial transactions.
+- **Combined Search & Filtering**: Real-time keyword search, transaction type toggles (Income/Expense), adaptive category filters, and timeframe filters (All Time, This Month, This Week).
+- **Financial Analytics & Charts**:
+  - Live summary stat cards: Total Balance, Total Income, Total Expense, Transaction Count.
+  - Granular metrics: Average Expense, Largest Expense, Largest Income, and Savings Rate percentage.
+  - Interactive Recharts: Monthly comparative bar charts, daily spending trend area charts, and category donut/progress allocations.
+- **Polished UX States**:
+  - Shimmer skeleton loaders for transaction rows, stat cards, and charts.
+  - Inline API error feedback with single-click retry connection button.
+  - Floating toast notifications for CRUD actions.
+  - Deletion confirmation dialog with in-progress spinner state.
+  - Contextual empty states for transactions, filtered queries, and analytics.
+- **Strict Form Validation**: Real-time and submission validation for required fields, RFC email format, password minimum length, confirmation matching, numeric limits, non-future dates, and duplicate registration email detection.
 
 ---
 
 ## Tech Stack
 
+### Frontend
 - **Framework**: [React 19](https://react.dev/)
-- **Charts Library**: [Recharts](https://recharts.org/)
-- **Bundler & Tooling**: [Vite 8](https://vite.dev/)
+- **Build Tool**: [Vite 8](https://vite.dev/)
+- **Charts Library**: [Recharts 3](https://recharts.org/)
 - **Linter**: [Oxlint](https://oxc.rs/)
-- **State & Storage**: React Hooks (`useState`, `useEffect`, `useMemo`, `useCallback`) + Browser `localStorage`
-- **Styling**: Modern CSS3 (CSS Custom Properties / Variables, Flexbox, CSS Grid) with Light/Dark Theme Support
-- **Fonts**: Plus Jakarta Sans & Inter via Google Fonts
-- **Package Manager**: npm
+- **Styling**: Vanilla CSS3 with CSS Custom Properties (Design Tokens), Flexbox, CSS Grid
+- **Typography**: Plus Jakarta Sans & Inter via Google Fonts
+
+### Backend
+- **Runtime**: [Node.js](https://nodejs.org/) (v18+; v24 tested)
+- **Framework**: [Express.js](https://expressjs.com/)
+- **Database Driver**: [`pg`](https://node-postgres.com/) (node-postgres connection pool)
+- **Authentication**: [`jsonwebtoken`](https://github.com/auth0/node-jsonwebtoken) (JWT) & [`bcrypt`](https://github.com/kelektiv/node.bcrypt.js)
+- **Security & Config**: [`cors`](https://github.com/expressjs/cors) & [`dotenv`](https://github.com/motdotla/dotenv)
+- **Test Runner**: Node.js Native Test Runner (`node:test`)
+
+### Database
+- **Database**: [PostgreSQL 14+](https://www.postgresql.org/)
 
 ---
 
-## Project Structure
+## System Architecture
 
 ```
-src/
-├── components/
-│   ├── AnalyticsSection.jsx   # Day 4 financial metrics & Recharts visualizer
-│   ├── AnalyticsSection.css   # Analytics metrics & chart container styles
-│   ├── DeleteConfirmModal.jsx # Deletion confirmation dialog
-│   ├── DeleteConfirmModal.css # Deletion dialog styling
-│   ├── Navbar.jsx             # Top navigation with brand, links & theme toggle
-│   ├── Navbar.css             # Navigation styling & responsive breakpoints
-│   ├── StatCard.jsx           # Reusable financial summary card component
-│   ├── StatCard.css           # Stat card styling & hover animations
-│   ├── TransactionFilters.jsx # Day 3 search, type, category & date toolbar
-│   ├── TransactionFilters.css # Search & filter toolbar styling
-│   ├── TransactionForm.jsx    # Add/Edit modal form with validation
-│   ├── TransactionForm.css    # Modal form styling & segmented controls
-│   ├── TransactionItem.jsx    # Transaction list item with action buttons
-│   └── TransactionItem.css    # Transaction row styling
-│
-├── hooks/
-│   ├── useTheme.js            # Light/Dark theme persistence & management
-│   └── useTransactions.js     # CRUD, Search, Filters, LocalStorage & Day 4 Analytics
-│
-├── pages/
-│   ├── Dashboard.jsx          # Main dashboard orchestrator
-│   └── Dashboard.css          # Layout grid & empty state styling
-│
-├── styles/
-│   ├── variables.css          # Centralized light & dark design tokens
-│   └── globals.css            # Reset, typography, smooth scrolling & base layout
-│
-├── utils/
-│   ├── constants.js           # Categories, icons, palette & initial demo data
-│   └── formatters.js          # Indonesian Rupiah & date formatters
-│
-├── App.jsx                    # Application layout container
-└── main.jsx                   # React root entry point
+[ Client Browser ]
+        │  ▲
+        │  │  HTTPS / JSON
+        │  │  (JWT Bearer Token)
+        ▼  │
+[ Express.js REST API (Port 5000) ]
+   ├── CORS & Body Parsers
+   ├── authMiddleware (JWT Verification)
+   ├── authController (Register / Login / Session)
+   ├── transactionController (CRUD + User Scoping)
+   └── errorHandler (Centralized Masking)
+        │  ▲
+        │  │  Parameterized SQL Queries
+        ▼  │  (pg.Pool Connection)
+[ PostgreSQL Database (Port 5432) ]
+   ├── users (Credentials & Profiles)
+   └── transactions (Financial Ledger with User Isolation)
 ```
 
 ---
 
-## Day 5 — Backend API + PostgreSQL
+## Database Structure
 
-### Implemented:
-- **Backend Architecture**: Decoupled Express.js REST API with clean separation of concerns (`controllers/`, `routes/`, `middleware/`, `config/`, `database/`).
-- **PostgreSQL Database**: Configured connection pool using `pg.Pool` with parameterized queries to prevent SQL injection vulnerabilities.
-- **Database Schema**: Reusable DDL script (`server/database/schema.sql`) with `CHECK (type IN ('income', 'expense'))`, `CHECK (amount > 0)`, automatic `updated_at` trigger, and indexed fields.
-- **Data Validation**: Strict server-side validation ensuring valid transaction types, positive numeric amounts, required title/category/date, and length constraints.
-- **Centralized Error Handling**: Security-conscious error middleware that masks internal database errors, connection strings, and stack traces from clients.
-- **CORS Protection**: Restricted CORS configuration permitting requests from client origin (`CLIENT_URL`).
-- **Health Check & Startup Check**: `/api/health` endpoint and automatic database reachability verification on server start.
+The PostgreSQL database enforces relational integrity and data constraints at the engine level:
 
-### API Endpoints
+### 1. `users` Table
+Stores registered accounts with hashed credentials.
+```sql
+CREATE TABLE users (
+  id            SERIAL PRIMARY KEY,
+  name          VARCHAR(100) NOT NULL,
+  email         VARCHAR(150) NOT NULL UNIQUE,
+  password_hash VARCHAR(255) NOT NULL,
+  created_at    TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+  updated_at    TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+);
+```
 
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/api/health` | API health check |
-| GET | `/api/transactions` | Get transactions (ordered chronologically) |
-| GET | `/api/transactions/:id` | Get transaction by ID |
-| POST | `/api/transactions` | Create transaction |
-| PUT | `/api/transactions/:id` | Update transaction |
-| DELETE | `/api/transactions/:id` | Delete transaction |
+### 2. `transactions` Table
+Stores income and expense records with foreign key user isolation.
+```sql
+CREATE TABLE transactions (
+  id               SERIAL PRIMARY KEY,
+  user_id          INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  title            VARCHAR(150) NOT NULL,
+  type             VARCHAR(10)  NOT NULL CHECK (type IN ('income', 'expense')),
+  category         VARCHAR(50)  NOT NULL,
+  amount           NUMERIC(14,2) NOT NULL CHECK (amount > 0),
+  transaction_date DATE NOT NULL,
+  description      TEXT,
+  created_at       TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+  updated_at       TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+);
 
-### Environment Variables (`server/.env.example`)
-
-| Variable | Description | Default |
-|---|---|---|
-| `DATABASE_URL` | PostgreSQL connection string | `postgresql://postgres:PASSWORD@localhost:5432/expense_tracker` |
-| `PORT` | Backend server port | `5000` |
-| `CLIENT_URL` | Allowed frontend origin for CORS | `http://localhost:5173` |
-
----
-
-## Day 6 — Authentication + Security + Frontend Integration
-
-### Implemented:
-- **User Authentication System**: Fully featured registration, login, session validation (`/api/auth/me`), and logout endpoints.
-- **Secure Password Hashing**: Utilizes `bcrypt` with salt rounds = 10; raw passwords are never saved or returned.
-- **JWT Authorization**: Stateless JSON Web Token authentication with Bearer tokens; tokens signed using `JWT_SECRET` from environment variables.
-- **Protected Transaction API & User Isolation**: All transaction routes are strictly guarded by `authMiddleware`. Every SQL query filters by `WHERE user_id = $1` to guarantee complete tenant isolation between users.
-- **PostgreSQL Source of Truth**: Replaced frontend `localStorage` persistence with live PostgreSQL CRUD API calls.
-- **Frontend Authentication Flow**: Dedicated `/login` and `/register` views styled with the signature futuristic visual identity (glass panels, neon violet/cyan gradients, and eye iconography).
-- **Session Persistence & Global 401 Interception**: Centralized `api.js` client automatically attaches `Authorization: Bearer <token>` and cleanly redirects expired sessions to login.
-- **Navbar Profile & Logout**: Dynamic user initials and display name in top navigation alongside an interactive logout button.
-
-> [!NOTE]
-> **Token Storage Architecture**: In this educational development project, JWT tokens are stored in `localStorage` for simplicity. For production-grade enterprise deployments, `HttpOnly` Secure SameSite cookies are recommended to mitigate cross-site scripting (XSS) risks.
-
-### Authentication API Endpoints
-
-| Method | Endpoint | Access | Description |
-|---|---|---|---|
-| POST | `/api/auth/register` | Public | Create a new user account with hashed password |
-| POST | `/api/auth/login` | Public | Authenticate credentials and receive JWT |
-| GET | `/api/auth/me` | Protected | Fetch current authenticated user profile |
-| POST | `/api/auth/logout` | Public | Acknowledge user logout |
+CREATE INDEX idx_transactions_user_id ON transactions(user_id);
+CREATE INDEX idx_transactions_date ON transactions(transaction_date);
+```
 
 ---
 
-## 7-Day Roadmap
+## Environment Variables
 
-- [x] **Day 1** — Dashboard Foundation *(Completed)*
-- [x] **Day 2** — Transaction CRUD + LocalStorage *(Completed)*
-- [x] **Day 3** — Categories + Search + Filter *(Completed)*
-- [x] **Day 4** — Financial Analytics + Charts *(Completed)*
-- [x] **Day 5** — Backend API + PostgreSQL *(Completed)*
-- [x] **Day 6** — Authentication + Security + Integration *(Completed)*
-- [ ] **Day 7** — Testing + Polish + Deployment + Documentation
+### Backend Configuration (`server/.env`)
+Copy `server/.env.example` to `server/.env`:
+
+```env
+# PostgreSQL Connection URL
+DATABASE_URL=postgresql://postgres:YOUR_PASSWORD@localhost:5432/expense_tracker
+
+# Backend Server Port
+PORT=5000
+
+# Allowed Frontend Client Origin for CORS
+CLIENT_URL=http://localhost:5173
+
+# JWT Secret for Signing Authentication Tokens
+JWT_SECRET=your_super_secret_random_key_here
+```
+
+### Frontend Configuration (`.env`)
+Optional custom backend endpoint (defaults to `http://localhost:5000/api`):
+
+```env
+VITE_API_URL=http://localhost:5000/api
+```
 
 ---
 
-## Getting Started
+## Installation & Setup
 
-### Prerequisites
-- Node.js (v18 or higher recommended; v24 tested)
-- npm (v9 or higher)
-- PostgreSQL (v14 or higher)
-
-### Frontend Setup
-Clone the repository and install frontend dependencies:
+### 1. PostgreSQL Setup
+Create the PostgreSQL database and execute the schema:
 
 ```bash
-git clone <repository-url>
-cd "Personal expense tracker"
-npm install
-npm run dev
+# Log in to PostgreSQL CLI
+psql -U postgres
+
+# Create database
+CREATE DATABASE expense_tracker;
+\q
+
+# Apply schema file
+psql -U postgres -d expense_tracker -f server/database/schema.sql
 ```
 
-Frontend runs on [http://localhost:5173](http://localhost:5173).
-
-### Backend Setup
-Install backend dependencies and configure database:
-
+### 2. Backend Setup
 ```bash
 cd server
 npm install
 cp .env.example .env
-# Edit .env with your PostgreSQL credentials
+# Edit server/.env with your database credentials
 ```
 
-Initialize database:
+### 3. Frontend Setup
 ```bash
-psql -U postgres -d expense_tracker -f database/schema.sql
+# From project root
+npm install
 ```
 
-Run backend server:
+---
+
+## How to Run Locally
+
+You need two terminal sessions running concurrently:
+
+### Terminal 1: Backend Server
 ```bash
+cd server
 npm run dev
+# Server runs on http://localhost:5000
 ```
 
-Backend runs on [http://localhost:5000](http://localhost:5000).
+### Terminal 2: Frontend Client
+```bash
+# In project root
+npm run dev
+# Vite runs on http://localhost:5173
+```
 
-### Build
-Create an optimized frontend production build:
+Open [http://localhost:5173](http://localhost:5173) in your web browser.
+
+---
+
+## Authentication Flow
+
+```
+1. Registration / Login:
+   User submits credentials -> POST /api/auth/register or POST /api/auth/login
+   Server verifies or hashes password -> Issues signed JWT token
+   Client stores token in localStorage (`auth_token`)
+
+2. Authenticated API Requests:
+   Client requests include header: `Authorization: Bearer <token>`
+   authMiddleware verifies token -> Injects req.user = { id, email, name }
+   All queries execute with: WHERE user_id = req.user.id
+
+3. Session Restoration & Expiry:
+   On page refresh -> Client calls GET /api/auth/me to restore user profile
+   If token is expired/invalid (401) -> Client clears storage and redirects to sign in
+```
+
+---
+
+## API Overview
+
+### Authentication (`/api/auth`)
+
+| Method | Endpoint | Access | Description |
+|---|---|---|---|
+| `POST` | `/api/auth/register` | Public | Register user account with hashed password |
+| `POST` | `/api/auth/login` | Public | Verify credentials and receive JWT |
+| `GET` | `/api/auth/me` | Protected | Get profile for currently authenticated user |
+| `POST` | `/api/auth/logout` | Public | Acknowledge user logout |
+
+### Transactions (`/api/transactions`)
+
+| Method | Endpoint | Access | Description |
+|---|---|---|---|
+| `GET` | `/api/transactions` | Protected | List all transactions belonging to authenticated user |
+| `POST` | `/api/transactions` | Protected | Create a new transaction |
+| `GET` | `/api/transactions/:id` | Protected | Fetch a single transaction (ownership verified) |
+| `PUT` | `/api/transactions/:id` | Protected | Update transaction (ownership verified) |
+| `DELETE` | `/api/transactions/:id` | Protected | Delete transaction (ownership verified) |
+
+### Health Check
+
+| Method | Endpoint | Access | Description |
+|---|---|---|---|
+| `GET` | `/api/health` | Public | Returns API status and health check |
+
+---
+
+## Testing Instructions
+
+### 1. Run Backend Automated Test Suite
+Runs all 30 unit, integration, and security tests:
+
+```bash
+cd server
+npm test
+```
+
+### 2. Run Frontend Linter
+Checks code style and linting rules across all JavaScript/JSX files:
+
+```bash
+npm run lint
+```
+
+### 3. Run Production Build
+Verifies that client assets compile cleanly into minified bundles:
 
 ```bash
 npm run build
 ```
 
-### Lint
-Check for code quality issues:
+---
 
-```bash
-npm run lint
-```
+## Security Notes
+
+- **Password Hashing**: Implements bcrypt with 10 salt rounds. Raw passwords are never stored, logged, or returned in API responses.
+- **SQL Injection Prevention**: Every SQL query uses parameterized placeholders (`$1`, `$2`) through `pg.Pool`.
+- **Tenant Isolation**: Every database interaction on the transaction table explicitly filters by `WHERE user_id = req.user.id` to prevent cross-account data leakage.
+- **Error Masking**: Database connection strings, stack traces, and internal server exceptions are logged internally and masked from client responses.
+- **CORS Restriction**: Configured via Express middleware to strictly accept requests origin matching `CLIENT_URL`.
+- **JWT Best Practice Note**: In this educational development project, tokens are stored in `localStorage` for accessibility. In enterprise production environments, `HttpOnly`, `SameSite=Strict` cookies are recommended to prevent XSS-based token theft.
+
+---
+
+## Project Roadmap
+
+- [x] **Day 1** — Dashboard Foundation & Layout *(Completed)*
+- [x] **Day 2** — Transaction CRUD + LocalStorage Prototype *(Completed)*
+- [x] **Day 3** — Categories, Multi-field Search & Filters *(Completed)*
+- [x] **Day 4** — Financial Analytics & Interactive Recharts *(Completed)*
+- [x] **Day 5** — Node.js / Express REST API & PostgreSQL Database *(Completed)*
+- [x] **Day 6** — User Authentication, JWT Security & Database Integration *(Completed)*
+- [x] **Day 7** — UX Polish, States, Validation, Testing & Documentation *(Completed)*
+
+---
+
+## What I Learned
+
+Through building this application from scratch across the 7-day challenge, key learnings included:
+
+1. **Full-Stack Relational Architecture**: Connecting React with an asynchronous PostgreSQL database pool highlighted the importance of strict schema constraints (`CHECK`, `FOREIGN KEY ON DELETE CASCADE`) to maintain transactional data integrity.
+2. **Stateless JWT Security & Tenant Isolation**: Implementing user isolation reinforced that security must be enforced on the backend at the database query level (`WHERE user_id = $1`), rather than relying solely on client-side route guards.
+3. **Resilient UX State Management**: Developing clear empty states, skeleton shimmer placeholders, and optimistic feedback toasts dramatically improves user confidence during network latency or transient server errors.
+4. **Defensive Form Validation**: Handling validation both client-side (for immediate user-friendly inline feedback) and server-side (for tamper protection) ensures a clean, robust data pipeline.
